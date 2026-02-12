@@ -1,17 +1,13 @@
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { ArrowRight } from "lucide-react"
-import { products } from "@/lib/mock-data"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/routing"
+import { BestSellers } from "@/components/home/best-sellers"
 
 export default function HomePage() {
   const t = useTranslations('home')
-  const tProduct = useTranslations('product')
   const siteName = useTranslations()('siteName')
-
-  // Get best selling products (first 8 products)
-  const bestSellers = products.slice(0, 8)
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -72,51 +68,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Best Sellers Section */}
-        <section className="py-16 bg-background">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-serif font-medium">{t('bestSellers')}</h2>
-              <Link href="/shop" className="text-sm text-primary hover:underline flex items-center gap-1">
-                {t('viewAll')}
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
-
-            <div className="relative">
-              <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
-                {bestSellers.map((product) => (
-                  <Link key={product.id} href={`/product/${product.id}`} className="flex-none w-64 snap-start group">
-                    <div className="relative mb-4 overflow-hidden rounded-lg bg-muted">
-                      {product.salePrice && (
-                        <span className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded z-10">
-                          {tProduct('sale')}
-                        </span>
-                      )}
-                      <img
-                        src={product.images[0] || "/placeholder.svg"}
-                        alt={product.name}
-                        className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    </div>
-                    <h3 className="font-medium text-sm mb-1 line-clamp-2 no-flip">{product.name}</h3>
-                    <p className="text-xs text-muted-foreground mb-2 no-flip">{product.brand}</p>
-                    <div className="flex items-center gap-2">
-                      {product.salePrice ? (
-                        <>
-                          <span className="text-red-600 font-semibold no-flip">${product.salePrice}</span>
-                          <span className="text-muted-foreground line-through text-sm no-flip">${product.price}</span>
-                        </>
-                      ) : (
-                        <span className="font-semibold no-flip">${product.price}</span>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Best Sellers Section - Now fetches from backend */}
+        <BestSellers />
 
         {/* Collections Grid */}
         <section className="py-16">

@@ -1,19 +1,38 @@
 "use client"
 
+import { useState, useEffect, useMemo } from "react"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/product/product-card"
-import { mockProducts } from "@/lib/mock-data"
-import { Sparkles, RefreshCw, TrendingUp, Heart } from "lucide-react"
+import { productService, type Product } from "@/lib/product-service"
+import { Sparkles, RefreshCw, TrendingUp, Heart, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 export default function RecommendationsPage() {
   const t = useTranslations("recommendations")
-  // Mock personalized recommendations
-  const forYou = mockProducts.slice(0, 4)
-  const completeTheLook = mockProducts.slice(4, 7)
-  const trending = mockProducts.filter((p) => p.salePrice).slice(0, 4)
-  const newArrivals = mockProducts.slice(7, 11)
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setLoading(true)
+        const backendProducts = await productService.getAllProducts()
+        setProducts(backendProducts)
+      } catch (error) {
+        console.error("Failed to load products:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadProducts()
+  }, [])
+
+  // Derive recommendation sections from loaded products
+  const forYou = useMemo(() => products.slice(0, 4), [products])
+  const completeTheLook = useMemo(() => products.slice(4, 7), [products])
+  const trending = useMemo(() => products.filter((p) => p.salePrice).slice(0, 4), [products])
+  const newArrivals = useMemo(() => products.slice(7, 11), [products])
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -34,62 +53,80 @@ export default function RecommendationsPage() {
           </div>
 
           {/* Based on Your Browsing */}
-          <section className="mb-16">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <Heart className="w-6 h-6 text-primary" />
-                <h2 className="font-serif text-3xl font-medium">{t("forYou.title")}</h2>
-              </div>
-              <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                <RefreshCw className="w-4 h-4" />
-                {t("forYou.refresh")}
-              </button>
+          {loading ? (
+            <div className="flex items-center justify-center py-24">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {forYou.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
+          ) : products.length === 0 ? (
+            <div className="text-center py-24 text-muted-foreground">
+              No products available
             </div>
-          </section>
+          ) : (
+            <>
+              <section className="mb-16">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <Heart className="w-6 h-6 text-primary" />
+                    <h2 className="font-serif text-3xl font-medium">{t("forYou.title")}</h2>
+                  </div>
+                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <RefreshCw className="w-4 h-4" />
+                    {t("forYou.refresh")}
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {forYou.map((product) => (
+                    <ProductCard key={product.id} product={product} />
+                  ))}
+                </div>
+              </section>
 
-          {/* Complete the Look */}
-          <section className="mb-16 p-8 bg-muted rounded-2xl">
-            <div className="mb-6">
-              <h2 className="font-serif text-3xl font-medium mb-2">{t("completeLook.title")}</h2>
-              <p className="text-muted-foreground">{t("completeLook.subtitle")}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {completeTheLook.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </section>
+              {/* Complete the Look */}
+              {completeTheLook.length > 0 && (
+                <section className="mb-16 p-8 bg-muted rounded-2xl">
+                  <div className="mb-6">
+                    <h2 className="font-serif text-3xl font-medium mb-2">{t("completeLook.title")}</h2>
+                    <p className="text-muted-foreground">{t("completeLook.subtitle")}</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {completeTheLook.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-          {/* Trending in Your Style */}
-          <section className="mb-16">
-            <div className="flex items-center gap-3 mb-6">
-              <TrendingUp className="w-6 h-6 text-primary" />
-              <h2 className="font-serif text-3xl font-medium">{t("trending.title")}</h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {trending.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </section>
+              {/* Trending in Your Style */}
+              {trending.length > 0 && (
+                <section className="mb-16">
+                  <div className="flex items-center gap-3 mb-6">
+                    <TrendingUp className="w-6 h-6 text-primary" />
+                    <h2 className="font-serif text-3xl font-medium">{t("trending.title")}</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {trending.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                </section>
+              )}
 
-          {/* New Arrivals You'll Love */}
-          <section className="mb-16">
-            <div className="mb-6">
-              <h2 className="font-serif text-3xl font-medium mb-2">{t("newArrivals.title")}</h2>
-              <p className="text-muted-foreground">{t("newArrivals.subtitle")}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {newArrivals.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
-          </section>
+              {/* New Arrivals You'll Love */}
+              {newArrivals.length > 0 && (
+                <section className="mb-16">
+                  <div className="mb-6">
+                    <h2 className="font-serif text-3xl font-medium mb-2">{t("newArrivals.title")}</h2>
+                    <p className="text-muted-foreground">{t("newArrivals.subtitle")}</p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {newArrivals.map((product) => (
+                      <ProductCard key={product.id} product={product} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
 
           {/* CTA */}
           <section className="text-center py-16 px-4 bg-secondary text-secondary-foreground rounded-2xl">

@@ -2,7 +2,7 @@
 
 import Image from "next/image"
 import { Heart } from "lucide-react"
-import type { Product } from "@/lib/mock-data"
+import type { Product } from "@/lib/product-service"
 import { useWishlist } from "@/lib/wishlist-context"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/routing"

@@ -1,19 +1,45 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useTranslations } from "next-intl"
-import { Plus, Pencil, Trash2, Search } from "lucide-react"
-import { mockProducts, type Product } from "@/lib/mock-data"
+import { Plus, Pencil, Trash2, Search, Loader2 } from "lucide-react"
+import { productService, type Product } from "@/lib/product-service"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ProductFormModal } from "@/components/admin/product-form-modal"
 
 export default function ProductsManagement() {
   const t = useTranslations('admin.products')
-  const [products, setProducts] = useState<Product[]>(mockProducts)
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+
+  // Fetch products from backend
+  const fetchProducts = async () => {
+    try {
+      setLoading(true)
+      const backendProducts = await productService.getAllProducts()
+      setProducts(backendProducts || [])
+    } catch (error) {
+      console.error("Failed to fetch products:", error)
+      setProducts([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchProducts()
+  }, [])
+
+  // Derive unique brands from loaded products for the form
+  const availableBrands = useMemo(() => {
+    const brands = products.map(p => p.brand).filter(Boolean) as string[]
+    return [...new Set(brands)].sort()
+  }, [products])
 
   const filteredProducts = products.filter(
     (product) =>
@@ -21,24 +47,79 @@ export default function ProductsManagement() {
       product.brand.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const handleAddProduct = (product: Omit<Product, "id">) => {
-    const newProduct = {
-      ...product,
-      id: Date.now().toString(),
+  const handleAddProduct = async (product: Omit<Product, "id"> & { gender?: string; material?: string; tags?: string[] }) => {
+    try {
+      setSaving(true)
+      // Transform frontend Product to backend format
+      const backendData = {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        stock: product.inStock ? 100 : 0, // Backend uses stock, not inStock
+        category: product.category,
+        brand: product.brand,
+        sizes: product.sizes,
+        colors: product.colors,
+        images: product.images?.length ? product.images : [product.image],
+        gender: product.gender || 'unisex',
+        material: product.material || 'Cotton',
+        tags: product.tags || ['fashion'],
+        merchantName: product.merchantName || '',
+      }
+      await productService.createProduct(backendData)
+      await fetchProducts() // Refresh the list from backend
+      setIsModalOpen(false)
+    } catch (error: any) {
+      console.error("Failed to create product:", error)
+      alert(error.message || "Failed to create product. Please try again.")
+    } finally {
+      setSaving(false)
     }
-    setProducts([newProduct, ...products])
-    setIsModalOpen(false)
   }
 
-  const handleEditProduct = (product: Product) => {
-    setProducts(products.map((p) => (p.id === product.id ? product : p)))
-    setEditingProduct(null)
-    setIsModalOpen(false)
+  const handleEditProduct = async (product: Product & { gender?: string; material?: string; tags?: string[] }) => {
+    try {
+      setSaving(true)
+      // Transform frontend Product to backend format
+      const backendData = {
+        name: product.name,
+        description: product.description,
+        price: product.price,
+        stock: product.inStock ? (product.stock || 100) : 0,
+        category: product.category,
+        brand: product.brand,
+        sizes: product.sizes,
+        colors: product.colors,
+        images: product.images?.length ? product.images : [product.image],
+        gender: product.gender,
+        material: product.material,
+        tags: product.tags,
+        merchantName: product.merchantName || '',
+      }
+      await productService.updateProduct(product.id, backendData)
+      await fetchProducts() // Refresh the list from backend
+      setEditingProduct(null)
+      setIsModalOpen(false)
+    } catch (error: any) {
+      console.error("Failed to update product:", error)
+      alert(error.message || "Failed to update product. Please try again.")
+    } finally {
+      setSaving(false)
+    }
   }
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     if (confirm(t('deleteConfirm'))) {
-      setProducts(products.filter((p) => p.id !== id))
+      try {
+        setSaving(true)
+        await productService.deleteProduct(id)
+        await fetchProducts() // Refresh the list from backend
+      } catch (error) {
+        console.error("Failed to delete product:", error)
+        alert("Failed to delete product. Please try again.")
+      } finally {
+        setSaving(false)
+      }
     }
   }
 
@@ -81,85 +162,91 @@ export default function ProductsManagement() {
 
       {/* Products Table */}
       <div className="bg-background border border-border rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-muted/50 border-b border-border">
-              <tr>
-                <th className="text-left px-6 py-4 text-sm font-semibold">{t('product')}</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold">{t('brand')}</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold">{t('category')}</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold">{t('price')}</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold">{t('stock')}</th>
-                <th className="text-right px-6 py-4 text-sm font-semibold">{t('actions')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((product) => (
-                <tr key={product.id} className="border-b border-border last:border-0 hover:bg-muted/30">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <img
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                      <div>
-                        <p className="font-medium">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">{product.sizes.length} {t('sizes')}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-sm">{product.brand}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-muted text-xs font-medium rounded capitalize">
-                      {product.category}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      {product.salePrice ? (
-                        <>
-                          <span className="font-medium">${product.salePrice}</span>
-                          <span className="text-sm text-muted-foreground line-through ml-2">${product.price}</span>
-                        </>
-                      ) : (
-                        <span className="font-medium">${product.price}</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded ${product.inStock ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
-                        }`}
-                    >
-                      {product.inStock ? t('inStock') : t('outOfStock')}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => openEditModal(product)}
-                        className="p-2 hover:bg-muted rounded-lg transition-colors"
-                        title={t('actions')}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
-                        title={t('actions')}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin" />
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-muted/50 border-b border-border">
+                <tr>
+                  <th className="text-left px-6 py-4 text-sm font-semibold">{t('product')}</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold">{t('brand')}</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold">{t('category')}</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold">{t('price')}</th>
+                  <th className="text-left px-6 py-4 text-sm font-semibold">{t('stock')}</th>
+                  <th className="text-right px-6 py-4 text-sm font-semibold">{t('actions')}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredProducts.map((product) => (
+                  <tr key={product.id} className="border-b border-border last:border-0 hover:bg-muted/30">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={product.image || "/placeholder.svg"}
+                          alt={product.name}
+                          className="w-12 h-12 object-cover rounded"
+                        />
+                        <div>
+                          <p className="font-medium">{product.name}</p>
+                          <p className="text-sm text-muted-foreground">{product.sizes.length} {t('sizes')}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-sm">{product.brand}</td>
+                    <td className="px-6 py-4">
+                      <span className="px-2 py-1 bg-muted text-xs font-medium rounded capitalize">
+                        {product.category}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div>
+                        {product.salePrice ? (
+                          <>
+                            <span className="font-medium">${product.salePrice}</span>
+                            <span className="text-sm text-muted-foreground line-through ml-2">${product.price}</span>
+                          </>
+                        ) : (
+                          <span className="font-medium">${product.price}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2 py-1 text-xs font-medium rounded ${product.inStock ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
+                          }`}
+                      >
+                        {product.inStock ? t('inStock') : t('outOfStock')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => openEditModal(product)}
+                          className="p-2 hover:bg-muted rounded-lg transition-colors"
+                          title={t('actions')}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(product.id)}
+                          className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
+                          title={t('actions')}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
-        {filteredProducts.length === 0 && (
+        {filteredProducts.length === 0 && !loading && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">{t('noProductsFound')}</p>
           </div>
@@ -172,6 +259,7 @@ export default function ProductsManagement() {
         onClose={closeModal}
         onSubmit={editingProduct ? handleEditProduct : handleAddProduct}
         product={editingProduct}
+        availableBrands={availableBrands}
       />
     </div>
   )

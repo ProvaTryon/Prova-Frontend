@@ -20,7 +20,7 @@ export default function DashboardPage() {
       case "admin":
         router.push("/admin")
         break
-      case "store_owner":
+      case "merchant":
         router.push("/store-owner")
         break
       case "customer_service":

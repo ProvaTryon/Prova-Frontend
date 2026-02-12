@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
-import type { Product } from "./mock-data"
+import type { Product } from "./product-service"
 
 interface WishlistContextType {
   wishlistItems: Product[]

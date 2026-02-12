@@ -1,103 +1,145 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
-import { Search, Pencil, Trash2, Shield, UserIcon } from "lucide-react"
+import { Search, Pencil, Trash2, Shield, UserIcon, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { UserEditModal } from "@/components/admin/user-edit-modal"
+import * as userService from "@/lib/user-service"
 
 interface User {
-  id: string
+  _id: string
   name: string
   email: string
-  role: "user" | "admin"
-  accountType: "customer" | "brand"
-  joinedDate: string
-  orders: number
-  status: "active" | "suspended"
+  phone?: string
+  address?: string
+  birth_date?: string
+  role: "user" | "admin" | "merchant" | "cs"
+  isActive: boolean
+  lastLogin?: string
+  createdAt?: string
 }
-
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    role: "user",
-    accountType: "customer",
-    joinedDate: "2024-01-15",
-    orders: 12,
-    status: "active",
-  },
-  {
-    id: "2",
-    name: "Admin User",
-    email: "admin@prova.com",
-    role: "admin",
-    accountType: "customer",
-    joinedDate: "2023-12-01",
-    orders: 0,
-    status: "active",
-  },
-  {
-    id: "3",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    role: "user",
-    accountType: "customer",
-    joinedDate: "2024-02-20",
-    orders: 8,
-    status: "active",
-  },
-  {
-    id: "4",
-    name: "Fashion Brand Co",
-    email: "contact@fashionbrand.com",
-    role: "user",
-    accountType: "brand",
-    joinedDate: "2024-01-10",
-    orders: 0,
-    status: "active",
-  },
-  {
-    id: "5",
-    name: "Sarah Johnson",
-    email: "sarah@example.com",
-    role: "user",
-    accountType: "customer",
-    joinedDate: "2024-03-05",
-    orders: 15,
-    status: "active",
-  },
-]
 
 export default function UsersManagement() {
   const t = useTranslations('admin.users')
-  const [users, setUsers] = useState<User[]>(mockUsers)
+  const [users, setUsers] = useState<User[]>([])
   const [searchQuery, setSearchQuery] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    loadUsers()
+  }, [])
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await userService.getAllUsers()
+      setUsers(data || [])
+    } catch (error: any) {
+      console.error("Failed to load users:", error)
+      setError(error.message || "Failed to load users")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchQuery.toLowerCase()),
+      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const handleToggleRole = (userId: string) => {
-    setUsers(
-      users.map((user) => (user.id === userId ? { ...user, role: user.role === "admin" ? "user" : "admin" } : user)),
-    )
+  const handleEditUser = (user: User) => {
+    setSelectedUser(user)
+    setEditModalOpen(true)
   }
 
-  const handleToggleStatus = (userId: string) => {
-    setUsers(
-      users.map((user) =>
-        user.id === userId ? { ...user, status: user.status === "active" ? "suspended" : "active" } : user,
-      ),
-    )
+  const handleUpdateUser = async (userId: string, userData: Partial<User>) => {
+    await userService.updateUser(userId, userData)
+    // Update local state with new data
+    setUsers(users.map((u) =>
+      u._id === userId ? { ...u, ...userData } : u
+    ))
   }
 
-  const handleDeleteUser = (userId: string) => {
-    if (confirm(t('deleteConfirm'))) {
-      setUsers(users.filter((user) => user.id !== userId))
+  const handleToggleStatus = async (userId: string) => {
+    const user = users.find(u => u._id === userId)
+    if (!user) return
+
+    try {
+      setActionLoading(userId)
+      const newIsActive = !user.isActive
+      await userService.updateUser(userId, { isActive: newIsActive })
+      setUsers(users.map((u) =>
+        u._id === userId ? { ...u, isActive: newIsActive } : u
+      ))
+    } catch (error: any) {
+      console.error("Failed to update user status:", error)
+      alert(error.message || "Failed to update user status")
+    } finally {
+      setActionLoading(null)
     }
+  }
+
+  const handleDeleteUser = async (userId: string) => {
+    const user = users.find(u => u._id === userId)
+    if (user?.role === "admin") {
+      alert("Cannot delete admin users")
+      return
+    }
+
+    if (confirm(t('deleteConfirm'))) {
+      try {
+        setActionLoading(userId)
+        await userService.deleteUser(userId)
+        setUsers(users.filter((u) => u._id !== userId))
+      } catch (error) {
+        console.error("Failed to delete user:", error)
+        alert("Failed to delete user")
+      } finally {
+        setActionLoading(null)
+      }
+    }
+  }
+
+  const getRoleStyle = (role: string) => {
+    switch (role) {
+      case "admin":
+        return "bg-red-50 text-red-700"
+      case "merchant":
+        return "bg-blue-50 text-blue-700"
+      case "cs":
+        return "bg-purple-50 text-purple-700"
+      default:
+        return "bg-muted"
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={loadUsers}
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          Try Again
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -129,15 +171,15 @@ export default function UsersManagement() {
         </div>
         <div className="bg-background border border-border rounded-lg p-4">
           <p className="text-sm text-muted-foreground mb-1">{t('activeUsers')}</p>
-          <p className="text-2xl font-bold">{users.filter((u) => u.status === "active").length}</p>
+          <p className="text-2xl font-bold">{users.filter((u) => u.isActive).length}</p>
         </div>
         <div className="bg-background border border-border rounded-lg p-4">
-          <p className="text-sm text-muted-foreground mb-1">{t('customers')}</p>
-          <p className="text-2xl font-bold">{users.filter((u) => u.accountType === "customer").length}</p>
+          <p className="text-sm text-muted-foreground mb-1">Merchants</p>
+          <p className="text-2xl font-bold">{users.filter((u) => u.role === "merchant").length}</p>
         </div>
         <div className="bg-background border border-border rounded-lg p-4">
-          <p className="text-sm text-muted-foreground mb-1">{t('brands')}</p>
-          <p className="text-2xl font-bold">{users.filter((u) => u.accountType === "brand").length}</p>
+          <p className="text-sm text-muted-foreground mb-1">Admins</p>
+          <p className="text-2xl font-bold">{users.filter((u) => u.role === "admin").length}</p>
         </div>
       </div>
 
@@ -148,9 +190,7 @@ export default function UsersManagement() {
             <thead className="bg-muted/50 border-b border-border">
               <tr>
                 <th className="text-left px-6 py-4 text-sm font-semibold">{t('user')}</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold">{t('accountType')}</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold">{t('role')}</th>
-                <th className="text-left px-6 py-4 text-sm font-semibold">{t('orders')}</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold">{t('joined')}</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold">{t('status')}</th>
                 <th className="text-right px-6 py-4 text-sm font-semibold">{t('actions')}</th>
@@ -158,7 +198,7 @@ export default function UsersManagement() {
             </thead>
             <tbody>
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="border-b border-border last:border-0 hover:bg-muted/30">
+                <tr key={user._id} className="border-b border-border last:border-0 hover:bg-muted/30">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
@@ -175,46 +215,50 @@ export default function UsersManagement() {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="px-2 py-1 bg-muted text-xs font-medium rounded capitalize">
-                      {user.accountType}
+                    <span className={`px-2 py-1 text-xs font-medium rounded capitalize ${getRoleStyle(user.role)}`}>
+                      {user.role}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => handleToggleRole(user.id)}
-                      className={`px-2 py-1 text-xs font-medium rounded ${user.role === "admin"
-                          ? "bg-primary/10 text-primary hover:bg-primary/20"
-                          : "bg-muted hover:bg-muted/80"
-                        }`}
-                    >
-                      {user.role === "admin" ? t('admin') : t('userRole')}
-                    </button>
+                  <td className="px-6 py-4 text-sm">
+                    {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "-"}
                   </td>
-                  <td className="px-6 py-4 text-sm">{user.orders}</td>
-                  <td className="px-6 py-4 text-sm">{new Date(user.joinedDate).toLocaleDateString()}</td>
                   <td className="px-6 py-4">
                     <button
-                      onClick={() => handleToggleStatus(user.id)}
-                      className={`px-2 py-1 text-xs font-medium rounded ${user.status === "active"
-                          ? "bg-green-50 text-green-700 hover:bg-green-100"
-                          : "bg-red-50 text-red-700 hover:bg-red-100"
-                        }`}
+                      onClick={() => handleToggleStatus(user._id)}
+                      disabled={actionLoading === user._id || user.role === "admin"}
+                      className={`px-2 py-1 text-xs font-medium rounded ${user.isActive
+                        ? "bg-green-50 text-green-700 hover:bg-green-100"
+                        : "bg-red-50 text-red-700 hover:bg-red-100"
+                        } disabled:opacity-50`}
                     >
-                      {user.status === "active" ? t('active') : t('suspended')}
+                      {actionLoading === user._id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        user.isActive ? t('active') : t('suspended')
+                      )}
                     </button>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
-                      <button className="p-2 hover:bg-muted rounded-lg transition-colors" title={t('actions')}>
+                      <button
+                        onClick={() => handleEditUser(user)}
+                        className="p-2 hover:bg-muted rounded-lg transition-colors disabled:opacity-50"
+                        disabled={actionLoading === user._id}
+                        title="Edit user"
+                      >
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteUser(user.id)}
-                        className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors"
-                        disabled={user.role === "admin"}
-                        title={t('actions')}
+                        onClick={() => handleDeleteUser(user._id)}
+                        className="p-2 hover:bg-red-50 text-red-600 rounded-lg transition-colors disabled:opacity-50"
+                        disabled={user.role === "admin" || actionLoading === user._id}
+                        title="Delete user"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {actionLoading === user._id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </td>
@@ -230,6 +274,17 @@ export default function UsersManagement() {
           </div>
         )}
       </div>
+
+      {/* User Edit Modal */}
+      <UserEditModal
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false)
+          setSelectedUser(null)
+        }}
+        onSubmit={handleUpdateUser}
+        user={selectedUser}
+      />
     </div>
   )
 }

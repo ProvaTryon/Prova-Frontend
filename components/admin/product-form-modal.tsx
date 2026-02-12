@@ -7,17 +7,30 @@ import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import type { Product } from "@/lib/mock-data"
-import { brands, categories } from "@/lib/mock-data"
+import type { Product } from "@/lib/product-service"
+
+// Static category definitions
+const defaultCategories = [
+  { id: "women", name: "Women" },
+  { id: "men", name: "Men" },
+  { id: "accessories", name: "Accessories" },
+]
 
 interface ProductFormModalProps {
   isOpen: boolean
   onClose: () => void
   onSubmit: (product: Product | Omit<Product, "id">) => void
   product?: Product | null
+  availableBrands?: string[]
 }
 
-export function ProductFormModal({ isOpen, onClose, onSubmit, product }: ProductFormModalProps) {
+export function ProductFormModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  product,
+  availableBrands = []
+}: ProductFormModalProps) {
   const [formData, setFormData] = useState({
     name: "",
     brand: "",
@@ -30,6 +43,10 @@ export function ProductFormModal({ isOpen, onClose, onSubmit, product }: Product
     images: "",
     description: "",
     inStock: true,
+    gender: "unisex",
+    material: "",
+    tags: "",
+    merchantName: "",
   })
 
   useEffect(() => {
@@ -46,6 +63,10 @@ export function ProductFormModal({ isOpen, onClose, onSubmit, product }: Product
         images: product.images.join(", "),
         description: product.description,
         inStock: product.inStock,
+        gender: (product as any).gender || "unisex",
+        material: (product as any).material || "",
+        tags: (product as any).tags?.join(", ") || "",
+        merchantName: product.merchantName || "",
       })
     } else {
       setFormData({
@@ -60,6 +81,10 @@ export function ProductFormModal({ isOpen, onClose, onSubmit, product }: Product
         images: "",
         description: "",
         inStock: true,
+        gender: "unisex",
+        material: "",
+        tags: "",
+        merchantName: "",
       })
     }
   }, [product, isOpen])
@@ -74,12 +99,16 @@ export function ProductFormModal({ isOpen, onClose, onSubmit, product }: Product
       price: Number.parseFloat(formData.price),
       salePrice: formData.salePrice ? Number.parseFloat(formData.salePrice) : undefined,
       category: formData.category,
-      sizes: formData.sizes.split(",").map((s) => s.trim()),
-      colors: formData.colors.split(",").map((c) => c.trim()),
+      sizes: formData.sizes.split(",").map((s) => s.trim()).filter(Boolean),
+      colors: formData.colors.split(",").map((c) => c.trim()).filter(Boolean),
       image: formData.image,
-      images: formData.images.split(",").map((i) => i.trim()),
+      images: formData.images.split(",").map((i) => i.trim()).filter(Boolean),
       description: formData.description,
       inStock: formData.inStock,
+      gender: formData.gender,
+      material: formData.material,
+      tags: formData.tags.split(",").map((t) => t.trim()).filter(Boolean),
+      merchantName: formData.merchantName,
     }
 
     onSubmit(productData as Product)
@@ -111,6 +140,19 @@ export function ProductFormModal({ isOpen, onClose, onSubmit, product }: Product
             </div>
 
             <div>
+              <Label htmlFor="merchantName">Merchant Name</Label>
+              <Input
+                id="merchantName"
+                value={formData.merchantName}
+                onChange={(e) => setFormData({ ...formData, merchantName: e.target.value })}
+                placeholder="Enter merchant name"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <Label htmlFor="brand">Brand</Label>
               <select
                 id="brand"
@@ -120,16 +162,37 @@ export function ProductFormModal({ isOpen, onClose, onSubmit, product }: Product
                 required
               >
                 <option value="">Select brand</option>
-                {brands.map((brand) => (
+                {availableBrands.map((brand) => (
                   <option key={brand} value={brand}>
                     {brand}
+                  </option>
+                ))}
+                {/* Allow typing a new brand if not in the list */}
+                {formData.brand && !availableBrands.includes(formData.brand) && (
+                  <option value={formData.brand}>{formData.brand}</option>
+                )}
+              </select>
+            </div>
+
+            <div>
+              <Label htmlFor="category">Category</Label>
+              <select
+                id="category"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                required
+              >
+                {defaultCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
                   </option>
                 ))}
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="price">Price ($)</Label>
               <Input
@@ -151,25 +214,6 @@ export function ProductFormModal({ isOpen, onClose, onSubmit, product }: Product
                 value={formData.salePrice}
                 onChange={(e) => setFormData({ ...formData, salePrice: e.target.value })}
               />
-            </div>
-
-            <div>
-              <Label htmlFor="category">Category</Label>
-              <select
-                id="category"
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full h-10 px-3 rounded-md border border-input bg-background"
-                required
-              >
-                {categories
-                  .filter((cat) => cat.id !== "all")
-                  .map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </option>
-                  ))}
-              </select>
             </div>
           </div>
 
@@ -225,6 +269,45 @@ export function ProductFormModal({ isOpen, onClose, onSubmit, product }: Product
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full min-h-[100px] px-3 py-2 rounded-md border border-input bg-background"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="gender">Gender</Label>
+              <select
+                id="gender"
+                value={formData.gender}
+                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                required
+              >
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="unisex">Unisex</option>
+              </select>
+            </div>
+
+            <div>
+              <Label htmlFor="material">Material</Label>
+              <Input
+                id="material"
+                value={formData.material}
+                onChange={(e) => setFormData({ ...formData, material: e.target.value })}
+                placeholder="Cotton, Polyester, etc."
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="tags">Tags (comma separated)</Label>
+            <Input
+              id="tags"
+              value={formData.tags}
+              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+              placeholder="casual, summer, trending"
               required
             />
           </div>

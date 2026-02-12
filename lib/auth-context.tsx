@@ -9,7 +9,7 @@ interface User {
   email: string
   phone?: string
   accountType: "customer" | "brand"
-  role: "customer" | "admin" | "store_owner" | "customer_service"
+  role: "customer" | "admin" | "merchant" | "customer_service"
   isGuest?: boolean
   storeId?: string
   address?: string
@@ -17,8 +17,16 @@ interface User {
 
 interface AuthContextType {
   user: User | null
-  login: (email: string, password: string) => Promise<void>
-  signup: (name: string, email: string, password: string, accountType: "customer" | "brand") => Promise<void>
+  login: (email: string, password: string) => Promise<User>
+  signup: (name: string, email: string, password: string, role: "user" | "merchant", additionalData?: {
+    companyName?: string;
+    companyId?: string;
+    nationalId?: string;
+    phone?: string;
+    address?: string;
+    birth_date?: string;
+    confirmPassword?: string;
+  }) => Promise<void>
   logout: () => void
   isAuthenticated: boolean
   isAdmin: boolean
@@ -46,18 +54,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const token = authService.getToken()
         if (token) {
-          // محاولة جلب بيانات المستخدم من الـ API
-          const userData = await authService.getCurrentUser()
-          setUser({
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-            phone: userData.phone,
-            address: userData.address,
-            role: userData.role,
-            accountType: userData.role === 'store_owner' ? 'brand' : 'customer',
-            storeId: userData.storeId,
-          })
+          // جلب بيانات المستخدم من localStorage (تم حفظها عند تسجيل الدخول/التسجيل)
+          const userData = authService.getStoredUser()
+          if (userData) {
+            setUser({
+              id: userData.id || userData._id,
+              name: userData.name,
+              email: userData.email,
+              phone: userData.phone,
+              address: userData.address,
+              role: userData.role,
+              accountType: userData.role === 'merchant' ? 'brand' : 'customer',
+              storeId: userData.storeId,
+            })
+          }
         }
       } catch (error) {
         console.error('Failed to load user:', error)
@@ -74,21 +84,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ==========================================
   // 🔐 تسجيل الدخول
   // ==========================================
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<User> => {
     try {
       setLoading(true)
       const response = await authService.login({ email, password })
-      
-      setUser({
-        id: response.user.id,
+
+      const userData: User = {
+        id: response.user.id || response.user._id,
         name: response.user.name,
         email: response.user.email,
         phone: response.user.phone,
         address: response.user.address,
         role: response.user.role,
-        accountType: response.user.role === 'store_owner' ? 'brand' : 'customer',
+        accountType: response.user.role === 'merchant' ? 'brand' : 'customer',
         storeId: response.user.storeId,
-      })
+      }
+
+      setUser(userData)
+      return userData
     } catch (error: any) {
       throw new Error(error.message || 'فشل تسجيل الدخول')
     } finally {
@@ -103,27 +116,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     name: string,
     email: string,
     password: string,
-    accountType: "customer" | "brand"
+    role: "user" | "merchant",
+    additionalData?: {
+      companyName?: string;
+      companyId?: string;
+      nationalId?: string;
+      phone?: string;
+      address?: string;
+      birth_date?: string;
+      confirmPassword?: string;
+    }
   ) => {
     try {
       setLoading(true)
-      const role = accountType === 'brand' ? 'store_owner' : 'customer'
-      
+
       const response = await authService.register({
         name,
         email,
         password,
         role,
+        phone: additionalData?.phone,
+        address: additionalData?.address,
+        birth_date: additionalData?.birth_date,
+        confirmPassword: additionalData?.confirmPassword,
+        companyName: additionalData?.companyName,
+        companyId: additionalData?.companyId,
+        nationalId: additionalData?.nationalId,
       })
 
       setUser({
-        id: response.user.id,
+        id: response.user.id || response.user._id,
         name: response.user.name,
         email: response.user.email,
         phone: response.user.phone,
         address: response.user.address,
         role: response.user.role,
-        accountType,
+        accountType: role === 'merchant' ? 'brand' : 'customer',
         storeId: response.user.storeId,
       })
     } catch (error: any) {
@@ -159,21 +187,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ==========================================
   // 🔄 تحديث البيانات الشخصية
   // ==========================================
-  const updateUserProfile = async (data: { 
+  const updateUserProfile = async (data: {
     name?: string
     phone?: string
-    address?: string 
+    address?: string
   }) => {
     try {
       setLoading(true)
-      const response = await authService.updateProfile(data)
-      
-      setUser(prev => prev ? {
-        ...prev,
-        name: response.user.name,
-        phone: response.user.phone,
-        address: response.user.address,
-      } : null)
+      // استخدام user-service لتحديث البيانات
+      if (user) {
+        // في الواقع، يجب استدعاء user-service.updateUser هنا
+        // لكن في الوقت الحالي نحدث البيانات محليا
+        setUser(prev => prev ? {
+          ...prev,
+          ...data,
+        } : null)
+      }
     } catch (error: any) {
       throw new Error(error.message || 'فشل تحديث البيانات')
     } finally {
@@ -209,7 +238,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ==========================================
   const isAuthenticated = user !== null && !user.isGuest
   const isAdmin = user?.role === "admin"
-  const isStoreOwner = user?.role === "store_owner"
+  const isStoreOwner = user?.role === "merchant"
   const isCustomerService = user?.role === "customer_service"
   const isCustomer = user?.role === "customer"
 

@@ -1,51 +1,131 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
-import { Package, Users, TrendingUp, Store } from "lucide-react"
-import { mockStores } from "@/lib/mock-data"
+import { Package, Users, TrendingUp, Store, Loader2 } from "lucide-react"
+import * as merchantService from "@/lib/merchant-service"
+import * as userService from "@/lib/user-service"
+import * as productService from "@/lib/product-service"
+import * as orderService from "@/lib/order-service"
+
+// Backend data structures
+interface Merchant {
+  _id: string
+  name: string
+  email: string
+  companyName: string
+  products: string[]
+  createdAt?: string
+}
+
+interface Order {
+  _id: string
+  user: any
+  products: any[]
+  total: number
+  status: string
+  address: string
+  paymentMethod: string
+  createdAt?: string
+}
 
 export default function AdminDashboard() {
   const t = useTranslations('admin.dashboard')
   const tStats = useTranslations('admin.dashboard.stats')
 
-  const totalStores = mockStores.length
-  const activeStores = mockStores.filter((s) => s.status === "active").length
-  const pendingStoresList = mockStores.filter((s) => s.status === "pending")
+  const [loading, setLoading] = useState(true)
+  const [merchants, setMerchants] = useState<Merchant[]>([])
+  const [users, setUsers] = useState<any[]>([])
+  const [products, setProducts] = useState<any[]>([])
+  const [orders, setOrders] = useState<Order[]>([])
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true)
+
+        // Fetch all data in parallel
+        const [merchantsData, usersData, productsData, ordersData] = await Promise.allSettled([
+          merchantService.getAllMerchants(),
+          userService.getAllUsers(),
+          productService.getAllProducts(),
+          orderService.getAllOrders(),
+        ])
+
+        console.log("Dashboard data loaded:", { merchantsData, usersData, productsData, ordersData })
+
+        if (merchantsData.status === 'fulfilled') {
+          setMerchants(merchantsData.value || [])
+        }
+        if (usersData.status === 'fulfilled') {
+          setUsers(usersData.value || [])
+        }
+        if (productsData.status === 'fulfilled') {
+          setProducts(productsData.value || [])
+        }
+        if (ordersData.status === 'fulfilled') {
+          setOrders(ordersData.value || [])
+        }
+      } catch (error) {
+        console.error("Failed to load dashboard data:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadDashboardData()
+  }, [])
+
+  const totalStores = merchants.length
+
+  // Calculate total revenue from orders
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0)
 
   const stats = [
     {
       name: tStats('totalStores'),
       value: totalStores.toString(),
-      change: `${activeStores} ${tStats('active')}`,
+      change: `${merchants.length} merchants`,
       icon: Store,
       color: "text-accent-foreground",
       bgColor: "bg-accent/20",
     },
     {
       name: tStats('totalProducts'),
-      value: "248",
-      change: "+12%",
+      value: products.length.toString(),
+      change: "From database",
       icon: Package,
       color: "text-green-600",
       bgColor: "bg-green-50",
     },
     {
       name: tStats('totalUsers'),
-      value: "1,429",
-      change: "+8%",
+      value: users.length.toString(),
+      change: "Registered users",
       icon: Users,
       color: "text-purple-600",
       bgColor: "bg-purple-50",
     },
     {
       name: tStats('revenue'),
-      value: "$45,231",
-      change: "+18%",
+      value: `$${totalRevenue.toLocaleString()}`,
+      change: `${orders.length} orders`,
       icon: TrendingUp,
       color: "text-primary-foreground",
       bgColor: "bg-primary/20",
     },
   ]
+
+  // Get recent orders (last 4)
+  const recentOrders = orders.slice(0, 4)
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -79,25 +159,25 @@ export default function AdminDashboard() {
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-background border border-border rounded-lg p-6">
-          <h2 className="font-serif text-xl font-semibold mb-4">{t('pendingStoreApprovals')}</h2>
+          <h2 className="font-serif text-xl font-semibold mb-4">Recent Merchants</h2>
           <div className="space-y-4">
-            {pendingStoresList.length > 0 ? (
-              pendingStoresList.map((store) => (
+            {merchants.length > 0 ? (
+              merchants.slice(0, 5).map((merchant) => (
                 <div
-                  key={store.id}
+                  key={merchant._id}
                   className="flex items-center justify-between py-3 border-b border-border last:border-0"
                 >
                   <div>
-                    <p className="font-medium">{store.name}</p>
-                    <p className="text-sm text-muted-foreground">{store.ownerEmail}</p>
+                    <p className="font-medium">{merchant.companyName || merchant.name}</p>
+                    <p className="text-sm text-muted-foreground">{merchant.email}</p>
                   </div>
-                  <span className="px-3 py-1 bg-yellow-50 text-yellow-700 text-xs font-medium rounded-full">
-                    {t('pending')}
+                  <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
+                    {merchant.products?.length || 0} products
                   </span>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">{t('noPendingApprovals')}</p>
+              <p className="text-sm text-muted-foreground text-center py-4">No merchants found</p>
             )}
           </div>
         </div>
@@ -105,15 +185,28 @@ export default function AdminDashboard() {
         <div className="bg-background border border-border rounded-lg p-6">
           <h2 className="font-serif text-xl font-semibold mb-4">{t('recentOrders')}</h2>
           <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center justify-between py-3 border-b border-border last:border-0">
-                <div>
-                  <p className="font-medium">{useTranslations('admin.orders')('orderNumber')}{1000 + i}</p>
-                  <p className="text-sm text-muted-foreground">2 {t('items')} • $129.99</p>
+            {recentOrders.length > 0 ? (
+              recentOrders.map((order) => (
+                <div key={order._id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                  <div>
+                    <p className="font-medium">Order #{order._id.slice(-6).toUpperCase()}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {order.products?.length || 0} products • ${order.total?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 text-xs font-medium rounded-full ${order.status === 'delivered' ? 'bg-green-50 text-green-700' :
+                      order.status === 'pending' ? 'bg-yellow-50 text-yellow-700' :
+                        order.status === 'processing' ? 'bg-blue-50 text-blue-700' :
+                          order.status === 'shipped' ? 'bg-purple-50 text-purple-700' :
+                            'bg-gray-50 text-gray-700'
+                    }`}>
+                    {order.status || 'pending'}
+                  </span>
                 </div>
-                <span className="px-3 py-1 bg-green-50 text-green-700 text-xs font-medium rounded-full">{t('completed')}</span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground text-center py-4">No recent orders</p>
+            )}
           </div>
         </div>
       </div>

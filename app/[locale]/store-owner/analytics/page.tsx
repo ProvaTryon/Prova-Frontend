@@ -2,13 +2,12 @@
 
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/lib/auth-context"
-import { mockStores } from "@/lib/mock-data"
 import { TrendingUp, DollarSign, ShoppingCart, Users } from "lucide-react"
 
 export default function StoreOwnerAnalytics() {
   const t = useTranslations("storeOwner.analytics")
   const { user } = useAuth()
-  const store = mockStores.find((s) => s.id === user?.storeId)
+  // TODO: Fetch real analytics data from backend when API is available
 
   const salesData = [
     { month: "Jan", sales: 4200 },
@@ -38,7 +37,7 @@ export default function StoreOwnerAnalytics() {
             <span className="text-sm text-muted-foreground">{t("totalRevenue")}</span>
             <DollarSign className="w-5 h-5 text-muted-foreground" />
           </div>
-          <div className="text-3xl font-bold mb-2">${(store?.revenue || 0).toLocaleString()}</div>
+          <div className="text-3xl font-bold mb-2">$0</div>
           <p className="text-sm text-green-600">+12% {t("fromLastMonth")}</p>
         </div>
 
@@ -47,7 +46,7 @@ export default function StoreOwnerAnalytics() {
             <span className="text-sm text-muted-foreground">{t("totalOrders")}</span>
             <ShoppingCart className="w-5 h-5 text-muted-foreground" />
           </div>
-          <div className="text-3xl font-bold mb-2">{store?.totalSales || 0}</div>
+          <div className="text-3xl font-bold mb-2">0</div>
           <p className="text-sm text-green-600">+8% {t("fromLastMonth")}</p>
         </div>
 
@@ -56,8 +55,7 @@ export default function StoreOwnerAnalytics() {
             <span className="text-sm text-muted-foreground">{t("avgOrderValue")}</span>
             <TrendingUp className="w-5 h-5 text-muted-foreground" />
           </div>
-          <div className="text-3xl font-bold mb-2">
-            ${store?.totalSales ? Math.round((store.revenue / store.totalSales) * 100) / 100 : 0}
+          <div className="text-3xl font-bold mb-2">$0</div>
           </div>
           <p className="text-sm text-green-600">+3% {t("fromLastMonth")}</p>
         </div>
@@ -118,6 +116,6 @@ export default function StoreOwnerAnalytics() {
           </div>
         </div>
       </div>
-    </div>
+    </div >
   )
 }

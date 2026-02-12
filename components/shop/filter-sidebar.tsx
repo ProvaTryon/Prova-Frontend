@@ -2,8 +2,15 @@
 
 import { useState } from "react"
 import { X } from "lucide-react"
-import { brands, categories } from "@/lib/mock-data"
 import { useTranslations } from "next-intl"
+
+// Static category definitions
+const defaultCategories = [
+  { id: "all", name: "All Items" },
+  { id: "women", name: "Women" },
+  { id: "men", name: "Men" },
+  { id: "accessories", name: "Accessories" },
+]
 
 interface FilterSidebarProps {
   isOpen: boolean
@@ -15,9 +22,18 @@ interface FilterSidebarProps {
     sizes: string[]
   }
   onFilterChange: (filters: any) => void
+  availableBrands?: string[]
+  categories?: { id: string; name: string }[]
 }
 
-export function FilterSidebar({ isOpen, onClose, filters, onFilterChange }: FilterSidebarProps) {
+export function FilterSidebar({
+  isOpen,
+  onClose,
+  filters,
+  onFilterChange,
+  availableBrands = [],
+  categories = defaultCategories
+}: FilterSidebarProps) {
   const t = useTranslations('shop')
   const [localFilters, setLocalFilters] = useState(filters)
 
@@ -109,17 +125,21 @@ export function FilterSidebar({ isOpen, onClose, filters, onFilterChange }: Filt
         <div className="mb-8">
           <h3 className="font-semibold mb-4">{t('brand')}</h3>
           <div className="space-y-2">
-            {brands.map((brand) => (
-              <label key={brand} className="flex items-center gap-3 cursor-pointer group">
-                <input
-                  type="checkbox"
-                  checked={localFilters.brands.includes(brand)}
-                  onChange={() => handleBrandToggle(brand)}
-                  className="w-4 h-4 rounded text-primary focus:ring-primary"
-                />
-                <span className="text-sm group-hover:text-primary transition-colors">{brand}</span>
-              </label>
-            ))}
+            {availableBrands.length > 0 ? (
+              availableBrands.map((brand) => (
+                <label key={brand} className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={localFilters.brands.includes(brand)}
+                    onChange={() => handleBrandToggle(brand)}
+                    className="w-4 h-4 rounded text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm group-hover:text-primary transition-colors">{brand}</span>
+                </label>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No brands available</p>
+            )}
           </div>
         </div>
 

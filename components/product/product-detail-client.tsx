@@ -6,16 +6,45 @@ import { useWishlist } from "@/lib/wishlist-context"
 import Image from "next/image"
 import { Link } from "@/i18n/routing"
 import { Heart, Minus, Plus, Check } from "lucide-react"
-import type { Product } from "@/lib/mock-data"
+import type { Product } from "@/lib/product-service"
 import { ProductCard } from "@/components/product/product-card"
 import { useTranslations } from "next-intl"
 
 interface ProductDetailClientProps {
-  product: Product
-  relatedProducts: Product[]
+  product: any
+  relatedProducts: any[]
 }
 
 export function ProductDetailClient({ product, relatedProducts }: ProductDetailClientProps) {
+  // Map backend Product (_id) to frontend Product (id)
+  const mappedProduct = {
+    id: product._id || product.id || "",
+    name: product.name,
+    brand: product.brand || "Fashion Brand",
+    price: product.price,
+    category: product.category,
+    sizes: product.sizes || [],
+    colors: product.colors || [],
+    image: product.image || "",
+    images: product.images || [product.image],
+    description: product.description || "",
+    inStock: product.inStock !== false,
+  }
+
+  const mappedRelated = relatedProducts.map((p: any) => ({
+    id: p._id || p.id || "",
+    name: p.name,
+    brand: p.brand || "Fashion Brand",
+    price: p.price,
+    category: p.category,
+    sizes: p.sizes || [],
+    colors: p.colors || [],
+    image: p.image || "",
+    images: p.images || [p.image],
+    description: p.description || "",
+    inStock: p.inStock !== false,
+  }))
+
   const t = useTranslations("productDetail")
   const tCommon = useTranslations("common")
   const [selectedImage, setSelectedImage] = useState(0)
@@ -26,7 +55,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
 
   const { addItem } = useCart()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
-  const isWishlisted = isInWishlist(product.id)
+  const isWishlisted = isInWishlist(mappedProduct.id)
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
@@ -34,16 +63,16 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
       return
     }
 
-    addItem(product, selectedSize, selectedColor, quantity)
+    addItem(mappedProduct, selectedSize, selectedColor, quantity)
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
   }
 
   const handleWishlistToggle = () => {
     if (isWishlisted) {
-      removeFromWishlist(product.id)
+      removeFromWishlist(mappedProduct.id)
     } else {
-      addToWishlist(product)
+      addToWishlist(mappedProduct)
     }
   }
 
@@ -60,7 +89,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             {tCommon("shop")}
           </Link>
           <span>/</span>
-          <span className="text-foreground no-flip">{product.name}</span>
+          <span className="text-foreground no-flip">{mappedProduct.name}</span>
         </div>
 
         {/* Product Details */}
@@ -69,14 +98,14 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
           <div className="space-y-4">
             <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted">
               <Image
-                src={product.images[selectedImage] || product.image}
-                alt={product.name}
+                src={mappedProduct.images[selectedImage] || mappedProduct.image}
+                alt={mappedProduct.name}
                 fill
                 className="object-cover"
               />
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {product.images.map((img, idx) => (
+              {mappedProduct.images.map((img, idx) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
@@ -87,7 +116,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 >
                   <Image
                     src={img || "/placeholder.svg"}
-                    alt={`${product.name} view ${idx + 1}`}
+                    alt={`${mappedProduct.name} view ${idx + 1}`}
                     fill
                     className="object-cover"
                   />
@@ -99,24 +128,24 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              <p className="text-sm text-muted-foreground mb-2 no-flip">{product.brand}</p>
-              <h1 className="font-serif text-4xl font-medium mb-4 no-flip">{product.name}</h1>
+              <p className="text-sm text-muted-foreground mb-2 no-flip">{mappedProduct.brand}</p>
+              <h1 className="font-serif text-4xl font-medium mb-4 no-flip">{mappedProduct.name}</h1>
               <div className="flex items-center gap-3 no-flip">
-                {product.salePrice ? (
+                {mappedProduct.salePrice ? (
                   <>
-                    <span className="text-3xl font-semibold text-primary">${product.salePrice}</span>
-                    <span className="text-xl text-muted-foreground line-through">${product.price}</span>
+                    <span className="text-3xl font-semibold text-primary">${mappedProduct.salePrice}</span>
+                    <span className="text-xl text-muted-foreground line-through">${mappedProduct.price}</span>
                     <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
-                      {t("save")} ${product.price - product.salePrice}
+                      {t("save")} ${mappedProduct.price - mappedProduct.salePrice}
                     </span>
                   </>
                 ) : (
-                  <span className="text-3xl font-semibold">${product.price}</span>
+                  <span className="text-3xl font-semibold">${mappedProduct.price}</span>
                 )}
               </div>
             </div>
 
-            <p className="text-muted-foreground leading-relaxed no-flip">{product.description}</p>
+            <p className="text-muted-foreground leading-relaxed no-flip">{mappedProduct.description}</p>
 
             {/* Color Selection */}
             <div>
@@ -124,7 +153,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 {t("color")}: {selectedColor && <span className="font-normal text-muted-foreground no-flip">{selectedColor}</span>}
               </label>
               <div className="flex gap-2">
-                {product.colors.map((color) => (
+                {mappedProduct.colors.map((color) => (
                   <button
                     key={color}
                     onClick={() => setSelectedColor(color)}
@@ -145,7 +174,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 {t("size")}: {selectedSize && <span className="font-normal text-muted-foreground no-flip">{selectedSize}</span>}
               </label>
               <div className="flex flex-wrap gap-2">
-                {product.sizes.map((size) => (
+                {mappedProduct.sizes.map((size) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}

@@ -1,127 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
-import { Search, Eye, Package } from "lucide-react"
+import { Search, Eye, Package, Loader2, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { OrderDetailsModal } from "@/components/admin/order-details-modal"
+import * as orderService from "@/lib/order-service"
 
-interface OrderItem {
-  productId: string
-  productName: string
-  quantity: number
-  price: number
-  size: string
-  color: string
-}
-
+// Backend Order structure
 interface Order {
-  id: string
-  orderNumber: string
-  customerName: string
-  customerEmail: string
-  items: OrderItem[]
+  _id: string
+  user: {
+    _id: string
+    name: string
+    email: string
+  } | string
+  products: Array<{
+    _id: string
+    name: string
+    price: number
+    images?: string[]
+  } | string>
   total: number
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
-  paymentStatus: "paid" | "pending" | "failed"
-  orderDate: string
-  shippingAddress: string
+  address: string
+  paymentMethod: string
+  createdAt?: string
 }
-
-const mockOrders: Order[] = [
-  {
-    id: "1",
-    orderNumber: "ORD-1001",
-    customerName: "John Doe",
-    customerEmail: "john@example.com",
-    items: [
-      {
-        productId: "1",
-        productName: "Silk Blend Midi Dress",
-        quantity: 1,
-        price: 149,
-        size: "M",
-        color: "Black",
-      },
-      {
-        productId: "2",
-        productName: "Tailored Wool Blazer",
-        quantity: 1,
-        price: 299,
-        size: "M",
-        color: "Navy",
-      },
-    ],
-    total: 448,
-    status: "delivered",
-    paymentStatus: "paid",
-    orderDate: "2024-03-15T10:30:00",
-    shippingAddress: "123 Main St, New York, NY 10001",
-  },
-  {
-    id: "2",
-    orderNumber: "ORD-1002",
-    customerName: "Jane Smith",
-    customerEmail: "jane@example.com",
-    items: [
-      {
-        productId: "3",
-        productName: "Cashmere Turtleneck",
-        quantity: 2,
-        price: 159,
-        size: "S",
-        color: "Cream",
-      },
-    ],
-    total: 318,
-    status: "shipped",
-    paymentStatus: "paid",
-    orderDate: "2024-03-18T14:20:00",
-    shippingAddress: "456 Oak Ave, Los Angeles, CA 90001",
-  },
-  {
-    id: "3",
-    orderNumber: "ORD-1003",
-    customerName: "Sarah Johnson",
-    customerEmail: "sarah@example.com",
-    items: [
-      {
-        productId: "4",
-        productName: "Wide Leg Trousers",
-        quantity: 1,
-        price: 129,
-        size: "L",
-        color: "Black",
-      },
-    ],
-    total: 129,
-    status: "processing",
-    paymentStatus: "paid",
-    orderDate: "2024-03-20T09:15:00",
-    shippingAddress: "789 Pine Rd, Chicago, IL 60601",
-  },
-  {
-    id: "4",
-    orderNumber: "ORD-1004",
-    customerName: "Mike Wilson",
-    customerEmail: "mike@example.com",
-    items: [
-      {
-        productId: "5",
-        productName: "Leather Crossbody Bag",
-        quantity: 1,
-        price: 249,
-        size: "One Size",
-        color: "Tan",
-      },
-    ],
-    total: 249,
-    status: "pending",
-    paymentStatus: "paid",
-    orderDate: "2024-03-21T16:45:00",
-    shippingAddress: "321 Elm St, Boston, MA 02101",
-  },
-]
 
 const statusColors = {
   pending: "bg-yellow-50 text-yellow-700",
@@ -133,30 +38,151 @@ const statusColors = {
 
 export default function OrdersManagement() {
   const t = useTranslations('admin.orders')
-  const [orders, setOrders] = useState<Order[]>(mockOrders)
+  const [orders, setOrders] = useState<Order[]>([])
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<any>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  useEffect(() => {
+    loadOrders()
+  }, [])
+
+  const loadOrders = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await orderService.getAllOrders()
+      console.log("Orders loaded:", data)
+      setOrders(data || [])
+    } catch (error: any) {
+      console.error("Failed to load orders:", error)
+      setError(error.message || "Failed to load orders")
+      setOrders([])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Helper to get user info
+  const getUserName = (order: Order) => {
+    if (typeof order.user === 'object' && order.user?.name) {
+      return order.user.name
+    }
+    return "Unknown"
+  }
+
+  const getUserEmail = (order: Order) => {
+    if (typeof order.user === 'object' && order.user?.email) {
+      return order.user.email
+    }
+    return ""
+  }
 
   const filteredOrders = orders.filter(
     (order) =>
-      order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()),
+      order._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      getUserName(order).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      getUserEmail(order).toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const handleStatusChange = (orderId: string, newStatus: Order["status"]) => {
-    setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order)))
+  const handleStatusChange = async (orderId: string, newStatus: Order["status"]) => {
+    try {
+      setActionLoading(orderId)
+      // Find the current order to pass its data for validation
+      const currentOrder = orders.find(o => o._id === orderId)
+      await orderService.changeOrderStatus(orderId, { status: newStatus }, currentOrder)
+      setOrders(orders.map((order) => (order._id === orderId ? { ...order, status: newStatus } : order)))
+    } catch (error: any) {
+      console.error("Failed to update order status:", error)
+      alert(error.message || "Failed to update order status")
+      // Reload orders to get the current state from database
+      loadOrders()
+    } finally {
+      setActionLoading(null)
+    }
+  }
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!confirm("Are you sure you want to delete this order? This action cannot be undone.")) {
+      return
+    }
+    try {
+      setActionLoading(orderId)
+      await orderService.deleteOrder(orderId)
+      setOrders(orders.filter((order) => order._id !== orderId))
+    } catch (error: any) {
+      console.error("Failed to delete order:", error)
+      alert(error.message || "Failed to delete order")
+    } finally {
+      setActionLoading(null)
+    }
   }
 
   const handleViewOrder = (order: Order) => {
-    setSelectedOrder(order)
+    // Transform order for the modal
+    const modalOrder = {
+      id: order._id,
+      orderNumber: `ORD-${order._id.slice(-6).toUpperCase()}`,
+      customerName: getUserName(order),
+      customerEmail: getUserEmail(order),
+      items: order.products?.map((product, index) => {
+        if (typeof product === 'object') {
+          return {
+            productId: product._id,
+            productName: product.name,
+            quantity: 1,
+            price: product.price,
+            size: "N/A",
+            color: "N/A",
+          }
+        }
+        return {
+          productId: product,
+          productName: `Product ${index + 1}`,
+          quantity: 1,
+          price: 0,
+          size: "N/A",
+          color: "N/A",
+        }
+      }) || [],
+      total: order.total,
+      status: order.status,
+      paymentStatus: "paid",
+      orderDate: order.createdAt || new Date().toISOString(),
+      shippingAddress: order.address || "N/A",
+    }
+    setSelectedOrder(modalOrder)
     setIsModalOpen(true)
   }
 
-  const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0)
+  const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0)
   const pendingOrders = orders.filter((o) => o.status === "pending").length
   const shippedOrders = orders.filter((o) => o.status === "shipped").length
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+        <p className="text-red-600 mb-4">{error}</p>
+        <button
+          onClick={loadOrders}
+          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+        >
+          Try Again
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div>
@@ -216,33 +242,36 @@ export default function OrdersManagement() {
             </thead>
             <tbody>
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="border-b border-border last:border-0 hover:bg-muted/30">
+                <tr key={order._id} className="border-b border-border last:border-0 hover:bg-muted/30">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
                         <Package className="w-5 h-5 text-muted-foreground" />
                       </div>
                       <div>
-                        <p className="font-medium">{order.orderNumber}</p>
-                        <p className="text-sm text-muted-foreground">{order.paymentStatus}</p>
+                        <p className="font-medium">ORD-{order._id.slice(-6).toUpperCase()}</p>
+                        <p className="text-sm text-muted-foreground">{order.paymentMethod || "N/A"}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div>
-                      <p className="font-medium">{order.customerName}</p>
-                      <p className="text-sm text-muted-foreground">{order.customerEmail}</p>
+                      <p className="font-medium">{getUserName(order)}</p>
+                      <p className="text-sm text-muted-foreground">{getUserEmail(order)}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm">{order.items.length} {t('itemsCount')}</td>
-                  <td className="px-6 py-4 font-medium">${order.total.toFixed(2)}</td>
-                  <td className="px-6 py-4 text-sm">{new Date(order.orderDate).toLocaleDateString()}</td>
+                  <td className="px-6 py-4 text-sm">{order.products?.length || 0} {t('itemsCount')}</td>
+                  <td className="px-6 py-4 font-medium">${(order.total || 0).toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm">
+                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}
+                  </td>
                   <td className="px-6 py-4">
                     <select
                       value={order.status}
-                      onChange={(e) => handleStatusChange(order.id, e.target.value as Order["status"])}
-                      className={`px-2 py-1 text-xs font-medium rounded capitalize ${statusColors[order.status]}`}
+                      onChange={(e) => handleStatusChange(order._id, e.target.value as Order["status"])}
+                      className={`px-2 py-1 text-xs font-medium rounded capitalize ${statusColors[order.status] || "bg-gray-50 text-gray-700"} disabled:opacity-50`}
                       aria-label={t('status')}
+                      disabled={actionLoading === order._id}
                     >
                       <option value="pending">{t('pending')}</option>
                       <option value="processing">{t('processing')}</option>
@@ -256,9 +285,22 @@ export default function OrdersManagement() {
                       <button
                         onClick={() => handleViewOrder(order)}
                         className="p-2 hover:bg-muted rounded-lg transition-colors"
-                        title={t('actions')}
+                        title="View order"
+                        disabled={actionLoading === order._id}
                       >
                         <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteOrder(order._id)}
+                        className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                        title="Delete order"
+                        disabled={actionLoading === order._id}
+                      >
+                        {actionLoading === order._id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
                       </button>
                     </div>
                   </td>

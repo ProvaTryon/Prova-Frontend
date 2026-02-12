@@ -2,28 +2,53 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
-import { mockProducts } from "@/lib/mock-data"
+import { productService, type Product } from "@/lib/product-service"
+import { processTryOn, dataURLToFile, urlToFile, revokeObjectURL } from "@/lib/vton-service"
 import Image from "next/image"
-import { Upload, X, Loader2, Download, Share2, ShoppingBag, Info } from "lucide-react"
+import { Upload, X, Loader2, Download, Share2, ShoppingBag, Info, AlertCircle } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
 
 export default function VirtualTryOnPage() {
   const t = useTranslations("virtualTryOn")
   const [userImage, setUserImage] = useState<string | null>(null)
+  const [userImageFile, setUserImageFile] = useState<File | null>(null)
   const [selectedProduct, setSelectedProduct] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [result, setResult] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [showProductSelector, setShowProductSelector] = useState(false)
+  const [products, setProducts] = useState<Product[]>([])
+  const [productsLoading, setProductsLoading] = useState(true)
 
   const { addItem } = useCart()
+
+  // Load products from backend
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        setProductsLoading(true)
+        const backendProducts = await productService.getAllProducts()
+        setProducts(backendProducts)
+      } catch (error) {
+        console.error("Failed to load products:", error)
+      } finally {
+        setProductsLoading(false)
+      }
+    }
+    loadProducts()
+  }, [])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Store the file for API call
+      setUserImageFile(file)
+      setError(null)
+
       const reader = new FileReader()
       reader.onloadend = () => {
         setUserImage(reader.result as string)
@@ -34,22 +59,50 @@ export default function VirtualTryOnPage() {
   }
 
   const handleGenerate = async () => {
-    if (!userImage || !selectedProduct) {
+    if (!userImage || !selectedProduct || !userImageFile) {
       alert(t("uploadAlert"))
       return
     }
 
+    const selectedProductData = products.find((p) => p.id === selectedProduct)
+    if (!selectedProductData) {
+      setError("Selected product not found")
+      return
+    }
+
     setIsProcessing(true)
-    // Simulate AI processing
-    await new Promise((resolve) => setTimeout(resolve, 3000))
-    // In a real app, this would call the HR-VITON API
-    setResult(userImage) // Mock result
-    setIsProcessing(false)
+    setError(null)
+
+    try {
+      // Convert product image URL to File
+      const garmentImageFile = await urlToFile(
+        selectedProductData.image,
+        `garment-${selectedProductData.id}.jpg`
+      )
+
+      // Call the actual API
+      const resultUrl = await processTryOn(userImageFile, garmentImageFile)
+      setResult(resultUrl)
+    } catch (err: any) {
+      console.error("Virtual try-on error:", err)
+      setError(err.message || "Failed to process virtual try-on. Please try again.")
+    } finally {
+      setIsProcessing(false)
+    }
   }
+
+  // Clean up blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (result) {
+        revokeObjectURL(result)
+      }
+    }
+  }, [result])
 
   const handleAddToCart = () => {
     if (selectedProduct) {
-      const product = mockProducts.find((p) => p.id === selectedProduct)
+      const product = products.find((p) => p.id === selectedProduct)
       if (product) {
         addItem(product, product.sizes[0], product.colors[0])
         alert(t("addedToCart"))
@@ -57,7 +110,7 @@ export default function VirtualTryOnPage() {
     }
   }
 
-  const selectedProductData = mockProducts.find((p) => p.id === selectedProduct)
+  const selectedProductData = products.find((p) => p.id === selectedProduct)
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -100,7 +153,10 @@ export default function VirtualTryOnPage() {
                     <>
                       <Image src={userImage || "/placeholder.svg"} alt="User photo" fill className="object-cover" />
                       <button
-                        onClick={() => setUserImage(null)}
+                        onClick={() => {
+                          setUserImage(null)
+                          setUserImageFile(null)
+                        }}
                         className="absolute top-4 right-4 p-2 bg-background/80 backdrop-blur rounded-full hover:bg-background transition-colors"
                         title="Remove"
                       >
@@ -191,11 +247,43 @@ export default function VirtualTryOnPage() {
                   <ShoppingBag className="w-5 h-5" />
                   {t("addToCart")}
                 </button>
-                <button className="px-8 py-4 border-2 border-foreground text-foreground rounded-full font-medium hover:bg-foreground hover:text-background transition-all flex items-center justify-center gap-2">
+                <button
+                  onClick={() => {
+                    if (result) {
+                      const link = document.createElement('a')
+                      link.href = result
+                      link.download = `virtual-tryon-${Date.now()}.png`
+                      document.body.appendChild(link)
+                      link.click()
+                      document.body.removeChild(link)
+                    }
+                  }}
+                  className="px-8 py-4 border-2 border-foreground text-foreground rounded-full font-medium hover:bg-foreground hover:text-background transition-all flex items-center justify-center gap-2"
+                >
                   <Download className="w-5 h-5" />
                   {t("downloadResult")}
                 </button>
-                <button className="px-8 py-4 border border-border rounded-full font-medium hover:bg-muted transition-all flex items-center justify-center gap-2">
+                <button
+                  onClick={async () => {
+                    if (result && navigator.share) {
+                      try {
+                        const response = await fetch(result)
+                        const blob = await response.blob()
+                        const file = new File([blob], 'virtual-tryon.png', { type: 'image/png' })
+                        await navigator.share({
+                          files: [file],
+                          title: 'Virtual Try-On Result',
+                        })
+                      } catch (err) {
+                        console.error('Share failed:', err)
+                      }
+                    } else {
+                      // Fallback: copy URL or show message
+                      alert('Sharing is not supported on this device')
+                    }
+                  }}
+                  className="px-8 py-4 border border-border rounded-full font-medium hover:bg-muted transition-all flex items-center justify-center gap-2"
+                >
                   <Share2 className="w-5 h-5" />
                   {t("share")}
                 </button>
@@ -206,12 +294,24 @@ export default function VirtualTryOnPage() {
                   onClick={() => {
                     setResult(null)
                     setUserImage(null)
+                    setUserImageFile(null)
                     setSelectedProduct(null)
+                    setError(null)
                   }}
                   className="text-primary hover:underline"
                 >
                   {t("tryAnotherItem")}
                 </button>
+              </div>
+            </div>
+          )}
+
+          {/* Error Display */}
+          {error && (
+            <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0" />
+                <p className="text-sm text-destructive">{error}</p>
               </div>
             </div>
           )}
@@ -282,30 +382,40 @@ export default function VirtualTryOnPage() {
               </button>
             </div>
             <div className="overflow-y-auto p-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {mockProducts.map((product) => (
-                  <button
-                    key={product.id}
-                    onClick={() => {
-                      setSelectedProduct(product.id)
-                      setShowProductSelector(false)
-                    }}
-                    className="group text-left"
-                  >
-                    <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted mb-2">
-                      <Image
-                        src={product.image || "/placeholder.svg"}
-                        alt={product.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform"
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">{product.brand}</p>
-                    <p className="text-sm font-medium truncate">{product.name}</p>
-                    <p className="text-sm font-semibold">${product.salePrice || product.price}</p>
-                  </button>
-                ))}
-              </div>
+              {productsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : products.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  No products available
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  {products.map((product) => (
+                    <button
+                      key={product.id}
+                      onClick={() => {
+                        setSelectedProduct(product.id)
+                        setShowProductSelector(false)
+                      }}
+                      className="group text-left"
+                    >
+                      <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted mb-2">
+                        <Image
+                          src={product.image || "/placeholder.svg"}
+                          alt={product.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">{product.brand}</p>
+                      <p className="text-sm font-medium truncate">{product.name}</p>
+                      <p className="text-sm font-semibold">${product.salePrice || product.price}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

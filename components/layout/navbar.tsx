@@ -9,10 +9,12 @@ import { useAuth } from "@/lib/auth-context"
 import { useTranslations } from 'next-intl'
 import { LanguageSwitcher } from './language-switcher'
 import { ThemeToggle } from './theme-toggle'
+import { SearchModal } from './search-modal'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const { totalItems } = useCart()
   const { wishlistItems } = useWishlist()
   const { user, logout, isAuthenticated, isAdmin, isStoreOwner, isCustomerService } = useAuth()
@@ -49,6 +51,7 @@ export function Navbar() {
             <LanguageSwitcher />
             <ThemeToggle />
             <button
+              onClick={() => setSearchOpen(true)}
               className="hidden md:block p-2 hover:bg-muted rounded-full transition-colors"
               aria-label={t('search')}
               title={t('search')}
@@ -281,6 +284,9 @@ export function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Search Modal */}
+      <SearchModal isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </nav>
   )
 }

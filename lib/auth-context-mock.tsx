@@ -7,7 +7,7 @@ interface User {
   name: string
   email: string
   accountType: "customer" | "brand"
-  role: "customer" | "admin" | "store_owner" | "customer_service"
+  role: "customer" | "admin" | "merchant" | "customer_service"
   isGuest?: boolean
   storeId?: string // For store owners to identify their store
 }
@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: "Store Owner",
         email,
         accountType: "brand",
-        role: "store_owner",
+        role: "merchant",
         storeId: "store-001",
       }
     } else if (email === "cs@prova.com" && password === "cs123") {
@@ -127,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         isAuthenticated: !!user,
         isAdmin: user?.role === "admin",
-        isStoreOwner: user?.role === "store_owner",
+        isStoreOwner: user?.role === "merchant",
         isCustomerService: user?.role === "customer_service",
         isCustomer: user?.role === "customer",
         continueAsGuest,

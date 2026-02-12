@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/lib/auth-context"
-import { mockStores } from "@/lib/mock-data"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,9 +10,9 @@ import { Label } from "@/components/ui/label"
 export default function StoreOwnerSettings() {
   const t = useTranslations("storeOwner.settings")
   const { user } = useAuth()
-  const store = mockStores.find((s) => s.id === user?.storeId)
-  const [storeName, setStoreName] = useState(store?.name || "")
-  const [description, setDescription] = useState(store?.description || "")
+  // TODO: Fetch store details from backend when API is available
+  const [storeName, setStoreName] = useState("")
+  const [description, setDescription] = useState("")
   const [isSaving, setIsSaving] = useState(false)
 
   const handleSave = async () => {
@@ -62,10 +61,10 @@ export default function StoreOwnerSettings() {
           <div className="mt-2">
             <span
               className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${(() => {
-                  if (store?.status === "active") return "bg-green-100 text-green-700"
-                  if (store?.status === "pending") return "bg-yellow-100 text-yellow-700"
-                  return "bg-red-100 text-red-700"
-                })()
+                if (store?.status === "active") return "bg-green-100 text-green-700"
+                if (store?.status === "pending") return "bg-yellow-100 text-yellow-700"
+                return "bg-red-100 text-red-700"
+              })()
                 }`}
             >
               {store?.status}

@@ -4,7 +4,7 @@ import { StoreSidebar } from "@/components/store-owner/store-sidebar"
 
 export default function StoreOwnerLayout({ children }: { children: React.ReactNode }) {
   return (
-    <RoleRouteGuard allowedRoles={["store_owner"]}>
+    <RoleRouteGuard allowedRoles={["merchant"]}>
       <div className="flex">
         <StoreSidebar />
         <main className="flex-1 bg-background">{children}</main>

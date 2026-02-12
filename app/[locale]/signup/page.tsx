@@ -16,10 +16,18 @@ export default function SignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [phone, setPhone] = useState("")
+  const [address, setAddress] = useState("")
+  const [birthDate, setBirthDate] = useState("")
   const [accountType, setAccountType] = useState<"customer" | "brand">("customer")
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [error, setError] = useState("")
+
+  // Merchant fields
+  const [companyName, setCompanyName] = useState("")
+  const [companyId, setCompanyId] = useState("")
+  const [nationalId, setNationalId] = useState("")
 
   const { signup, signInWithGoogle } = useAuth()
   const router = useRouter()
@@ -33,18 +41,71 @@ export default function SignupPage() {
       return
     }
 
-    if (password.length < 8) {
-      setError(t("passwordTooShort"))
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters")
       return
+    }
+
+    if (name.length < 3 || name.length > 50) {
+      setError("Name must be between 3 and 50 characters")
+      return
+    }
+
+    if (phone.length < 10) {
+      setError("Phone number must be at least 10 characters")
+      return
+    }
+
+    if (address.length < 5) {
+      setError("Address must be at least 5 characters")
+      return
+    }
+
+    if (!birthDate) {
+      setError("Birth date is required")
+      return
+    }
+
+    // Check age (must be 13+)
+    const birthDateObj = new Date(birthDate)
+    const today = new Date()
+    const age = today.getFullYear() - birthDateObj.getFullYear()
+    const monthDiff = today.getMonth() - birthDateObj.getMonth()
+    const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate()) ? age - 1 : age
+
+    if (actualAge < 13) {
+      setError("You must be at least 13 years old to register")
+      return
+    }
+
+    // Validate merchant fields if brand account
+    if (accountType === "brand") {
+      if (!companyName || !companyId || !nationalId) {
+        setError("Please fill in all company information")
+        return
+      }
     }
 
     setIsLoading(true)
 
     try {
-      await signup(name, email, password, accountType)
+      // Determine role based on account type
+      const role = accountType === "brand" ? "merchant" : "user"
+
+      // Send data matching backend requirements
+      await signup(name, email, password, role, {
+        companyName: accountType === "brand" ? companyName : undefined,
+        companyId: accountType === "brand" ? companyId : undefined,
+        nationalId: accountType === "brand" ? nationalId : undefined,
+        phone,
+        address,
+        birth_date: birthDate,
+        confirmPassword,
+      })
       router.push("/")
     } catch (err) {
-      setError(t("signupFailed"))
+      console.error("Signup error:", err)
+      setError((err as Error).message || t("signupFailed"))
     } finally {
       setIsLoading(false)
     }
@@ -72,7 +133,7 @@ export default function SignupPage() {
             <span className="font-serif text-3xl font-semibold">{siteName}</span>
           </Link>
           <h1 className="font-serif text-3xl font-medium mt-6 mb-2">{t("createAccount")}</h1>
-          <p className="text-muted-foreground">{t("signUpSubtitle")}</p>
+          <p className="text-muted-foreground">{t("signUpSubtitle", { siteName })}</p>
         </div>
 
         <div className="bg-background border border-border rounded-lg p-8">
@@ -181,6 +242,51 @@ export default function SignupPage() {
             </div>
 
             <div>
+              <label htmlFor="phone" className="block text-sm font-medium mb-2">
+                Phone Number
+              </label>
+              <input
+                id="phone"
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
+                placeholder="+1 234 567 8900"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="address" className="block text-sm font-medium mb-2">
+                Address
+              </label>
+              <input
+                id="address"
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
+                placeholder="Your street address"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="birthDate" className="block text-sm font-medium mb-2">
+                Birth Date
+              </label>
+              <input
+                id="birthDate"
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
+              />
+              <p className="text-xs text-muted-foreground mt-1">You must be at least 13 years old</p>
+            </div>
+
+            <div>
               <label htmlFor="password" className="block text-sm font-medium mb-2">
                 {t("password")}
               </label>
@@ -209,6 +315,60 @@ export default function SignupPage() {
                 placeholder={t("passwordPlaceholder")}
               />
             </div>
+
+            {/* Merchant/Brand Fields */}
+            {accountType === "brand" && (
+              <>
+                <div className="border-t pt-6 mt-6">
+                  <h3 className="font-medium mb-4">Company Information</h3>
+                </div>
+
+                <div>
+                  <label htmlFor="companyName" className="block text-sm font-medium mb-2">
+                    Company Name
+                  </label>
+                  <input
+                    id="companyName"
+                    type="text"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    required={accountType === "brand"}
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
+                    placeholder="Your company name"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="companyId" className="block text-sm font-medium mb-2">
+                    Company ID / Registration Number
+                  </label>
+                  <input
+                    id="companyId"
+                    type="text"
+                    value={companyId}
+                    onChange={(e) => setCompanyId(e.target.value)}
+                    required={accountType === "brand"}
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
+                    placeholder="Your company registration number"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="nationalId" className="block text-sm font-medium mb-2">
+                    National ID / Tax ID
+                  </label>
+                  <input
+                    id="nationalId"
+                    type="text"
+                    value={nationalId}
+                    onChange={(e) => setNationalId(e.target.value)}
+                    required={accountType === "brand"}
+                    className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
+                    placeholder="Your national/tax ID"
+                  />
+                </div>
+              </>
+            )}
 
             <div className="text-sm text-muted-foreground">
               <label className="flex items-start gap-2 cursor-pointer">

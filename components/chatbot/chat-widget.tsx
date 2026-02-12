@@ -4,13 +4,13 @@ import { useState, useRef, useEffect } from "react"
 import { MessageCircle, X, Send, Sparkles } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
-import { mockProducts } from "@/lib/mock-data"
+import { productService, type Product } from "@/lib/product-service"
 
 interface Message {
   id: string
   role: "user" | "assistant"
   content: string
-  products?: typeof mockProducts
+  products?: Product[]
 }
 
 const quickActions = [
@@ -19,27 +19,6 @@ const quickActions = [
   "What's trending now?",
   "Help me with sizing",
 ]
-
-const mockResponses: Record<string, { text: string; products?: typeof mockProducts }> = {
-  default: {
-    text: "I'd be happy to help you find the perfect outfit! Could you tell me more about what you're looking for?",
-  },
-  dress: {
-    text: "I found some beautiful dresses that would be perfect for a wedding! Here are my top recommendations:",
-    products: mockProducts.filter((p) => p.name.toLowerCase().includes("dress")).slice(0, 2),
-  },
-  casual: {
-    text: "Here are some great casual pieces from our collection:",
-    products: mockProducts.filter((p) => p.category === "women" || p.category === "men").slice(0, 3),
-  },
-  trending: {
-    text: "These items are trending right now and flying off the shelves:",
-    products: mockProducts.filter((p) => p.salePrice).slice(0, 3),
-  },
-  sizing: {
-    text: "I can help with sizing! Our size guide includes detailed measurements for each item. You can find it on any product page. Is there a specific item you need help with?",
-  },
-}
 
 export function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
@@ -52,7 +31,23 @@ export function ChatWidget() {
   ])
   const [input, setInput] = useState("")
   const [isTyping, setIsTyping] = useState(false)
+  const [products, setProducts] = useState<Product[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // Load products from backend when chat opens
+  useEffect(() => {
+    if (isOpen && products.length === 0) {
+      const loadProducts = async () => {
+        try {
+          const backendProducts = await productService.getAllProducts()
+          setProducts(backendProducts)
+        } catch (error) {
+          console.error("Failed to load products:", error)
+        }
+      }
+      loadProducts()
+    }
+  }, [isOpen, products.length])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -61,6 +56,35 @@ export function ChatWidget() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  const getResponse = (messageText: string): { text: string; products?: Product[] } => {
+    const lowerMessage = messageText.toLowerCase()
+
+    if (lowerMessage.includes("dress") || lowerMessage.includes("wedding")) {
+      return {
+        text: "I found some beautiful dresses that would be perfect for a wedding! Here are my top recommendations:",
+        products: products.filter((p) => p.name.toLowerCase().includes("dress")).slice(0, 2),
+      }
+    } else if (lowerMessage.includes("casual")) {
+      return {
+        text: "Here are some great casual pieces from our collection:",
+        products: products.filter((p) => p.category === "women" || p.category === "men").slice(0, 3),
+      }
+    } else if (lowerMessage.includes("trend")) {
+      return {
+        text: "These items are trending right now and flying off the shelves:",
+        products: products.filter((p) => p.salePrice).slice(0, 3),
+      }
+    } else if (lowerMessage.includes("size") || lowerMessage.includes("sizing")) {
+      return {
+        text: "I can help with sizing! Our size guide includes detailed measurements for each item. You can find it on any product page. Is there a specific item you need help with?",
+      }
+    }
+
+    return {
+      text: "I'd be happy to help you find the perfect outfit! Could you tell me more about what you're looking for?",
+    }
+  }
 
   const handleSend = async (message?: string) => {
     const messageText = message || input
@@ -79,18 +103,7 @@ export function ChatWidget() {
     // Simulate AI response
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    let response = mockResponses.default
-    const lowerMessage = messageText.toLowerCase()
-
-    if (lowerMessage.includes("dress") || lowerMessage.includes("wedding")) {
-      response = mockResponses.dress
-    } else if (lowerMessage.includes("casual")) {
-      response = mockResponses.casual
-    } else if (lowerMessage.includes("trend")) {
-      response = mockResponses.trending
-    } else if (lowerMessage.includes("size") || lowerMessage.includes("sizing")) {
-      response = mockResponses.sizing
-    }
+    const response = getResponse(messageText)
 
     const assistantMessage: Message = {
       id: (Date.now() + 1).toString(),
@@ -134,9 +147,8 @@ export function ChatWidget() {
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
-                    message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
-                  }`}
+                  className={`max-w-[80%] rounded-lg p-3 ${message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                    }`}
                 >
                   <p className="text-sm">{message.content}</p>
 

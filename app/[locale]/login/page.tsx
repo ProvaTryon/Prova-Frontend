@@ -22,14 +22,14 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const getRedirectPath = () => {
+  const getRedirectPath = (role?: string) => {
     const redirect = searchParams.get("redirect")
     if (redirect) return redirect
 
-    switch (user?.role) {
+    switch (role) {
       case "admin":
         return "/admin"
-      case "store_owner":
+      case "merchant":
         return "/store-owner"
       case "customer_service":
         return "/customer-service"
@@ -45,8 +45,8 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      await login(email, password)
-      router.push(getRedirectPath())
+      const loggedInUser = await login(email, password)
+      router.push(getRedirectPath(loggedInUser.role))
     } catch (err) {
       setError(t("invalidCredentials"))
     } finally {
@@ -60,7 +60,8 @@ export default function LoginPage() {
 
     try {
       await signInWithGoogle()
-      router.push(getRedirectPath())
+      // Google sign-in will redirect separately when implemented
+      router.push(getRedirectPath(user?.role))
     } catch (err) {
       setError(t("googleSignInFailed"))
     } finally {
