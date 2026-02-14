@@ -7,6 +7,7 @@ import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ImageUpload, MultiImageUpload, type UploadedImage } from "@/components/ui/image-upload"
 import type { Product } from "@/lib/product-service"
 
 // Static category definitions
@@ -39,8 +40,6 @@ export function ProductFormModal({
     category: "women",
     sizes: "",
     colors: "",
-    image: "",
-    images: "",
     description: "",
     inStock: true,
     gender: "unisex",
@@ -48,6 +47,10 @@ export function ProductFormModal({
     tags: "",
     merchantName: "",
   })
+
+  // ── Image state (Cloudinary objects) ──
+  const [mainImage, setMainImage] = useState<UploadedImage | null>(null)
+  const [additionalImages, setAdditionalImages] = useState<UploadedImage[]>([])
 
   useEffect(() => {
     if (product) {
@@ -59,8 +62,6 @@ export function ProductFormModal({
         category: product.category,
         sizes: product.sizes.join(", "),
         colors: product.colors.join(", "),
-        image: product.image,
-        images: product.images.join(", "),
         description: product.description,
         inStock: product.inStock,
         gender: (product as any).gender || "unisex",
@@ -68,6 +69,30 @@ export function ProductFormModal({
         tags: (product as any).tags?.join(", ") || "",
         merchantName: product.merchantName || "",
       })
+
+      // Populate image state from existing product URLs
+      // When editing, we create UploadedImage objects from existing URLs.
+      // public_id will be empty for legacy URL-based images — this is fine.
+      if (product.image) {
+        setMainImage({
+          secure_url: product.image,
+          public_id: (product as any).imagePublicId || "",
+        })
+      } else {
+        setMainImage(null)
+      }
+
+      if (product.images && product.images.length > 0) {
+        const publicIds: string[] = (product as any).imagePublicIds || []
+        setAdditionalImages(
+          product.images.map((url, i) => ({
+            secure_url: url,
+            public_id: publicIds[i] || "",
+          })),
+        )
+      } else {
+        setAdditionalImages([])
+      }
     } else {
       setFormData({
         name: "",
@@ -77,8 +102,6 @@ export function ProductFormModal({
         category: "women",
         sizes: "",
         colors: "",
-        image: "",
-        images: "",
         description: "",
         inStock: true,
         gender: "unisex",
@@ -86,11 +109,24 @@ export function ProductFormModal({
         tags: "",
         merchantName: "",
       })
+      setMainImage(null)
+      setAdditionalImages([])
     }
   }, [product, isOpen])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Build image URL + public_id arrays for storage
+    const allImageUrls = [
+      ...(mainImage ? [mainImage.secure_url] : []),
+      ...additionalImages.map((img) => img.secure_url),
+    ]
+
+    const allImagePublicIds = [
+      ...(mainImage ? [mainImage.public_id] : []),
+      ...additionalImages.map((img) => img.public_id),
+    ]
 
     const productData = {
       ...(product && { id: product.id }),
@@ -101,8 +137,11 @@ export function ProductFormModal({
       category: formData.category,
       sizes: formData.sizes.split(",").map((s) => s.trim()).filter(Boolean),
       colors: formData.colors.split(",").map((c) => c.trim()).filter(Boolean),
-      image: formData.image,
-      images: formData.images.split(",").map((i) => i.trim()).filter(Boolean),
+      image: mainImage?.secure_url || "",
+      images: allImageUrls,
+      // Pass public_ids alongside for Cloudinary cleanup
+      imagePublicId: mainImage?.public_id || "",
+      imagePublicIds: allImagePublicIds,
       description: formData.description,
       inStock: formData.inStock,
       gender: formData.gender,
@@ -120,7 +159,7 @@ export function ProductFormModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-background border border-border rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto m-4">
-        <div className="sticky top-0 bg-background border-b border-border px-6 py-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-background border-b border-border px-6 py-4 flex items-center justify-between z-10">
           <h2 className="font-serif text-2xl font-semibold">{product ? "Edit Product" : "Add New Product"}</h2>
           <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors">
             <X className="w-5 h-5" />
@@ -167,7 +206,6 @@ export function ProductFormModal({
                     {brand}
                   </option>
                 ))}
-                {/* Allow typing a new brand if not in the list */}
                 {formData.brand && !availableBrands.includes(formData.brand) && (
                   <option value={formData.brand}>{formData.brand}</option>
                 )}
@@ -241,26 +279,20 @@ export function ProductFormModal({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="image">Main Image URL</Label>
-            <Input
-              id="image"
-              value={formData.image}
-              onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-              placeholder="/path/to/image.jpg"
-              required
-            />
-          </div>
+          {/* ── Image Uploads (Cloudinary) ── */}
+          <ImageUpload
+            label="Main Image"
+            value={mainImage}
+            onChange={setMainImage}
+            required
+          />
 
-          <div>
-            <Label htmlFor="images">Additional Images (comma separated URLs)</Label>
-            <Input
-              id="images"
-              value={formData.images}
-              onChange={(e) => setFormData({ ...formData, images: e.target.value })}
-              placeholder="/image1.jpg, /image2.jpg"
-            />
-          </div>
+          <MultiImageUpload
+            label="Additional Images"
+            value={additionalImages}
+            onChange={setAdditionalImages}
+            maxImages={5}
+          />
 
           <div>
             <Label htmlFor="description">Description</Label>
@@ -326,7 +358,7 @@ export function ProductFormModal({
           </div>
 
           <div className="flex items-center gap-3 pt-4 border-t border-border">
-            <Button type="submit" className="flex-1">
+            <Button type="submit" className="flex-1" disabled={!mainImage}>
               {product ? "Update Product" : "Add Product"}
             </Button>
             <Button type="button" variant="outline" onClick={onClose} className="flex-1 bg-transparent">

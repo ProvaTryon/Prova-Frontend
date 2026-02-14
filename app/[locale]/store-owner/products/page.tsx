@@ -8,6 +8,7 @@ import { Search, Plus, Edit, Trash2, Package, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ProductFormModal } from "@/components/admin/product-form-modal"
+import { useToast } from "@/hooks/use-toast"
 
 // Default brands for merchants to choose from
 const defaultBrands = [
@@ -23,6 +24,7 @@ const defaultBrands = [
 export default function StoreOwnerProducts() {
   const t = useTranslations("storeOwner.products")
   const { user } = useAuth()
+  const { toast } = useToast()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -82,6 +84,17 @@ export default function StoreOwnerProducts() {
 
       // Transform frontend data to backend format
       // Auto-fill merchantName with logged-in user's name
+      console.log('🔑 Auth user object:', JSON.stringify(user, null, 2))
+      
+      if (!user?.id) {
+        toast({
+          title: 'Authentication Error',
+          description: 'Please log in again to create products.',
+          variant: 'destructive',
+        })
+        return
+      }
+
       const backendData = {
         name: productData.name,
         description: productData.description,
@@ -89,12 +102,15 @@ export default function StoreOwnerProducts() {
         stock: productData.stock || 10,
         category: productData.category,
         images: productData.images || [productData.image],
+        imagePublicId: (productData as any).imagePublicId || '',
+        imagePublicIds: (productData as any).imagePublicIds || [],
         sizes: productData.sizes || [],
         colors: productData.colors || [],
         brand: productData.brand,
         gender: (productData as any).gender || 'unisex',
         material: (productData as any).material || '',
         tags: (productData as any).tags || [],
+        merchant: String(user.id),
         merchantName: productData.merchantName || user?.name || '',
       }
 
@@ -112,7 +128,11 @@ export default function StoreOwnerProducts() {
       setEditingProduct(null)
     } catch (error: any) {
       console.error("Failed to save product:", error)
-      alert(error.message || "Failed to save product")
+      toast({
+        title: 'Failed to save product',
+        description: error.message || 'Please try again',
+        variant: 'destructive',
+      })
     } finally {
       setActionLoading(null)
     }
@@ -123,11 +143,30 @@ export default function StoreOwnerProducts() {
 
     try {
       setActionLoading(productId)
+
+      // Find the product to get its Cloudinary public_ids
+      const productToDelete = products.find((p) => p.id === productId)
+      if (productToDelete) {
+        const publicIds = ((productToDelete as any).imagePublicIds || []).filter(Boolean)
+        if (publicIds.length > 0) {
+          // Delete images from Cloudinary (fire-and-forget, don't block delete)
+          fetch("/api/delete-image", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ public_ids: publicIds }),
+          }).catch((err) => console.error("Failed to cleanup Cloudinary images:", err))
+        }
+      }
+
       await productService.deleteProduct(productId)
       setProducts(products.filter((p) => p.id !== productId))
     } catch (error: any) {
       console.error("Failed to delete product:", error)
-      alert(error.message || "Failed to delete product")
+      toast({
+        title: 'Failed to delete product',
+        description: error.message || 'Please try again',
+        variant: 'destructive',
+      })
     } finally {
       setActionLoading(null)
     }

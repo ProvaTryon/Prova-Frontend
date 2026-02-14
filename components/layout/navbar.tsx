@@ -24,7 +24,7 @@ export function Navbar() {
   return (
     <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-[72px]">
           {/* Logo */}
           <Link href="/" className="flex items-center">
             <span className="font-serif text-2xl font-semibold tracking-tight">{siteName}</span>
@@ -32,16 +32,16 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <Link href="/" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/" className="text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors">
               {t('home')}
             </Link>
-            <Link href="/shop" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/shop" className="text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors">
               {t('shop')}
             </Link>
-            <Link href="/virtual-tryon" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/virtual-tryon" className="text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors">
               {t('virtualTryon')}
             </Link>
-            <Link href="/recommendations" className="text-sm font-medium hover:text-primary transition-colors">
+            <Link href="/recommendations" className="text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors">
               {t('forYou')}
             </Link>
           </div>
@@ -52,24 +52,24 @@ export function Navbar() {
             <ThemeToggle />
             <button
               onClick={() => setSearchOpen(true)}
-              className="hidden md:block p-2 hover:bg-muted rounded-full transition-colors"
+              className="hidden md:block p-2 hover:bg-muted transition-colors"
               aria-label={t('search')}
               title={t('search')}
             >
               <Search className="w-5 h-5" />
             </button>
-            <Link href="/wishlist" className="relative p-2 hover:bg-muted rounded-full transition-colors">
+            <Link href="/wishlist" className="relative p-2 hover:bg-muted transition-colors">
               <Heart className="w-5 h-5" />
               {wishlistItems.length > 0 && (
-                <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -end-0.5 w-4 h-4 bg-foreground text-background text-[10px] font-medium flex items-center justify-center">
                   {wishlistItems.length}
                 </span>
               )}
             </Link>
-            <Link href="/cart" className="relative p-2 hover:bg-muted rounded-full transition-colors">
+            <Link href="/cart" className="relative p-2 hover:bg-muted transition-colors">
               <ShoppingBag className="w-5 h-5" />
               {totalItems > 0 && (
-                <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">
+                <span className="absolute -top-0.5 -end-0.5 w-4 h-4 bg-foreground text-background text-[10px] font-medium flex items-center justify-center">
                   {totalItems}
                 </span>
               )}
@@ -80,7 +80,7 @@ export function Navbar() {
               <div className="hidden md:block relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 p-2 hover:bg-muted rounded-full transition-colors"
+                  className="flex items-center gap-2 p-2 hover:bg-muted transition-colors"
                   aria-label={t('userMenu')}
                   title={t('userMenu')}
                   {...(userMenuOpen && { 'aria-expanded': true })}
@@ -99,7 +99,7 @@ export function Navbar() {
                       }}
                       aria-label={t('closeMenu')}
                     />
-                    <div className="absolute right-0 mt-2 w-56 bg-background border border-border rounded-lg shadow-lg py-2 z-20">
+                    <div className="absolute end-0 mt-2 w-56 bg-background border border-border shadow-lg py-2 z-20">
                       <div className="px-4 py-3 border-b border-border">
                         <p className="text-sm font-medium">{user?.name}</p>
                         <p className="text-xs text-muted-foreground">{user?.email}</p>
@@ -107,7 +107,7 @@ export function Navbar() {
                       {isAdmin && (
                         <Link
                           href="/admin"
-                          className="block px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-primary font-medium"
+                          className="px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-primary font-medium"
                           onClick={() => setUserMenuOpen(false)}
                         >
                           <Shield className="w-4 h-4" />
@@ -117,7 +117,7 @@ export function Navbar() {
                       {isStoreOwner && (
                         <Link
                           href="/store-owner"
-                          className="block px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-primary font-medium"
+                          className="px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-primary font-medium"
                           onClick={() => setUserMenuOpen(false)}
                         >
                           <Store className="w-4 h-4" />
@@ -127,7 +127,7 @@ export function Navbar() {
                       {isCustomerService && (
                         <Link
                           href="/customer-service"
-                          className="block px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-primary font-medium"
+                          className="px-4 py-2 text-sm hover:bg-muted transition-colors flex items-center gap-2 text-primary font-medium"
                           onClick={() => setUserMenuOpen(false)}
                         >
                           <Headphones className="w-4 h-4" />
@@ -172,7 +172,7 @@ export function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="hidden md:block px-4 py-2 bg-primary text-primary-foreground rounded-full text-sm font-medium hover:bg-primary/90 transition-colors"
+                className="hidden md:block px-5 py-2.5 bg-foreground text-background text-[12px] font-medium tracking-[0.08em] uppercase hover:bg-foreground/90 transition-colors"
               >
                 {t('login')}
               </Link>
@@ -197,28 +197,28 @@ export function Navbar() {
             </div>
             <Link
               href="/"
-              className="block py-2 text-base font-medium hover:text-primary transition-colors"
+              className="block py-2 text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('home')}
             </Link>
             <Link
               href="/shop"
-              className="block py-2 text-base font-medium hover:text-primary transition-colors"
+              className="block py-2 text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('shop')}
             </Link>
             <Link
               href="/virtual-tryon"
-              className="block py-2 text-base font-medium hover:text-primary transition-colors"
+              className="block py-2 text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('virtualTryon')}
             </Link>
             <Link
               href="/recommendations"
-              className="block py-2 text-base font-medium hover:text-primary transition-colors"
+              className="block py-2 text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('forYou')}
@@ -227,7 +227,7 @@ export function Navbar() {
               <>
                 <Link
                   href="/profile"
-                  className="block py-2 text-base font-medium hover:text-primary transition-colors"
+                  className="block py-2 text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {t('profile')}
@@ -235,7 +235,7 @@ export function Navbar() {
                 {isAdmin && (
                   <Link
                     href="/admin"
-                    className="block py-2 text-base font-medium text-primary flex items-center gap-2"
+                    className="py-2 text-[13px] font-medium text-primary flex items-center gap-2"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Shield className="w-5 h-5" />
@@ -245,7 +245,7 @@ export function Navbar() {
                 {isStoreOwner && (
                   <Link
                     href="/store-owner"
-                    className="block py-2 text-base font-medium text-primary flex items-center gap-2"
+                    className="py-2 text-[13px] font-medium text-primary flex items-center gap-2"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Store className="w-5 h-5" />
@@ -255,7 +255,7 @@ export function Navbar() {
                 {isCustomerService && (
                   <Link
                     href="/customer-service"
-                    className="block py-2 text-base font-medium text-primary flex items-center gap-2"
+                    className="py-2 text-[13px] font-medium text-primary flex items-center gap-2"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Headphones className="w-5 h-5" />
@@ -267,7 +267,7 @@ export function Navbar() {
                     logout()
                     setMobileMenuOpen(false)
                   }}
-                  className="block w-full text-left py-2 text-base font-medium text-destructive"
+                  className="block w-full text-left py-2 text-[13px] font-medium text-destructive"
                 >
                   {t('logout')}
                 </button>
@@ -275,7 +275,7 @@ export function Navbar() {
             ) : (
               <Link
                 href="/login"
-                className="block py-2 text-base font-medium hover:text-primary transition-colors"
+                className="block py-2 text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 {t('login')}

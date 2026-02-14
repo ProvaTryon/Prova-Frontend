@@ -56,7 +56,6 @@ export default function StoreOwnerAnalytics() {
             <TrendingUp className="w-5 h-5 text-muted-foreground" />
           </div>
           <div className="text-3xl font-bold mb-2">$0</div>
-          </div>
           <p className="text-sm text-green-600">+3% {t("fromLastMonth")}</p>
         </div>
 

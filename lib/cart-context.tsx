@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react"
 import type { Product } from "./product-service"
 
 interface CartItem extends Product {
@@ -23,6 +23,27 @@ const CartContext = createContext<CartContextType | undefined>(undefined)
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([])
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  // Load cart from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("prova-cart")
+      if (saved) {
+        setItems(JSON.parse(saved))
+      }
+    } catch {
+      // Ignore parse errors from corrupted data
+    }
+    setIsHydrated(true)
+  }, [])
+
+  // Persist cart to localStorage on changes (only after hydration)
+  useEffect(() => {
+    if (isHydrated) {
+      localStorage.setItem("prova-cart", JSON.stringify(items))
+    }
+  }, [items, isHydrated])
 
   const addItem = (product: Product, size: string, color: string, quantity = 1) => {
     setItems((prev) => {

@@ -13,6 +13,7 @@ interface User {
   isGuest?: boolean
   storeId?: string
   address?: string
+  birth_date?: string
 }
 
 interface AuthContextType {
@@ -58,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userData = authService.getStoredUser()
           if (userData) {
             setUser({
-              id: userData.id || userData._id,
+              id: String(userData.id || userData._id || ''),
               name: userData.name,
               email: userData.email,
               phone: userData.phone,
@@ -89,8 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       const response = await authService.login({ email, password })
 
+      console.log('🔑 Auth login response user:', JSON.stringify(response.user, null, 2))
+
       const userData: User = {
-        id: response.user.id || response.user._id,
+        id: String(response.user.id || response.user._id || ''),
         name: response.user.name,
         email: response.user.email,
         phone: response.user.phone,
@@ -145,7 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       })
 
       setUser({
-        id: response.user.id || response.user._id,
+        id: String(response.user.id || response.user._id || ''),
         name: response.user.name,
         email: response.user.email,
         phone: response.user.phone,

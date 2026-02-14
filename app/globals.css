@@ -3,98 +3,154 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* Fast theme transitions */
-* {
-  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 160ms;
+/* Targeted transitions — only interactive elements, not everything */
+a,
+button,
+[role="button"],
+input,
+select,
+textarea,
+.transition-colors,
+.transition-all {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, transform;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 150ms;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 :root {
-  /* Updated to white, black, beige color scheme */
-  --background: oklch(1 0 0);
-  /* White */
-  --foreground: oklch(0.2 0 0);
-  /* Soft black */
+  /* ========================================
+     PRÒVA DESIGN TOKENS — LIGHT MODE
+     Premium fashion: dark CTAs, warm canvas
+     ======================================== */
+
+  /* Canvas */
+  --background: oklch(0.985 0.002 75);
+  --foreground: oklch(0.145 0.005 60);
+
+  /* Surface — cards, modals */
   --card: oklch(1 0 0);
-  /* White */
-  --card-foreground: oklch(0.2 0 0);
+  --card-foreground: oklch(0.145 0.005 60);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0 0);
-  --primary: oklch(0.8 0.03 60);
-  /* Warm beige */
-  --primary-foreground: oklch(0.2 0 0);
-  /* Black text on beige */
-  --secondary: oklch(0.85 0.02 60);
-  /* Light beige */
-  --secondary-foreground: oklch(0.2 0 0);
-  --muted: oklch(0.96 0.01 60);
-  /* Very light beige/cream */
-  --muted-foreground: oklch(0.5 0 0);
-  /* Medium gray */
-  --accent: oklch(0.75 0.04 50);
-  /* Darker beige accent */
-  --accent-foreground: oklch(0.2 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --popover-foreground: oklch(0.145 0.005 60);
+
+  /* Primary — dark charcoal for strong CTAs */
+  --primary: oklch(0.205 0.005 60);
+  --primary-foreground: oklch(0.985 0.002 75);
+
+  /* Secondary — warm stone */
+  --secondary: oklch(0.935 0.008 75);
+  --secondary-foreground: oklch(0.25 0.005 60);
+
+  /* Muted */
+  --muted: oklch(0.955 0.005 75);
+  --muted-foreground: oklch(0.556 0.01 60);
+
+  /* Accent — warm brushed gold */
+  --accent: oklch(0.68 0.12 65);
+  --accent-foreground: oklch(0.145 0.005 60);
+
+  /* Semantic */
+  --destructive: oklch(0.577 0.2 25);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.9 0.01 60);
-  /* Light beige border */
-  --input: oklch(0.9 0.01 60);
-  --ring: oklch(0.75 0.04 50);
-  /* Beige focus ring */
-  --chart-1: oklch(0.75 0.04 50);
-  --chart-2: oklch(0.65 0.03 40);
-  --chart-3: oklch(0.55 0.02 30);
-  --chart-4: oklch(0.85 0.02 60);
-  --chart-5: oklch(0.45 0.01 20);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.98 0.005 60);
-  /* Very light beige */
-  --sidebar-foreground: oklch(0.2 0 0);
-  --sidebar-primary: oklch(0.75 0.04 50);
-  --sidebar-primary-foreground: oklch(0.2 0 0);
-  --sidebar-accent: oklch(0.96 0.01 60);
-  --sidebar-accent-foreground: oklch(0.2 0 0);
-  --sidebar-border: oklch(0.9 0.01 60);
-  --sidebar-ring: oklch(0.75 0.04 50);
+  --success: oklch(0.62 0.14 155);
+  --success-foreground: oklch(0.985 0 0);
+  --warning: oklch(0.75 0.15 75);
+  --warning-foreground: oklch(0.2 0 0);
+  --info: oklch(0.65 0.1 240);
+  --info-foreground: oklch(0.985 0 0);
+
+  /* Borders & Inputs */
+  --border: oklch(0.915 0.005 75);
+  --input: oklch(0.915 0.005 75);
+  --ring: oklch(0.205 0.005 60);
+
+  /* Charts */
+  --chart-1: oklch(0.205 0.005 60);
+  --chart-2: oklch(0.68 0.12 65);
+  --chart-3: oklch(0.556 0.01 60);
+  --chart-4: oklch(0.935 0.008 75);
+  --chart-5: oklch(0.62 0.14 155);
+
+  --radius: 0.625rem;
+
+  /* Sidebar */
+  --sidebar: oklch(0.975 0.003 75);
+  --sidebar-foreground: oklch(0.145 0.005 60);
+  --sidebar-primary: oklch(0.205 0.005 60);
+  --sidebar-primary-foreground: oklch(0.985 0.002 75);
+  --sidebar-accent: oklch(0.955 0.005 75);
+  --sidebar-accent-foreground: oklch(0.25 0.005 60);
+  --sidebar-border: oklch(0.915 0.005 75);
+  --sidebar-ring: oklch(0.205 0.005 60);
 }
 
 .dark {
-  /* Dark mode with inverted beige scheme */
-  --background: oklch(0.15 0 0);
-  /* Dark background */
-  --foreground: oklch(0.95 0.01 60);
-  /* Light beige text */
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.95 0.01 60);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.95 0.01 60);
-  --primary: oklch(0.75 0.04 50);
-  --primary-foreground: oklch(0.15 0 0);
-  --secondary: oklch(0.3 0.01 50);
-  --secondary-foreground: oklch(0.95 0.01 60);
-  --muted: oklch(0.25 0 0);
-  --muted-foreground: oklch(0.65 0.02 60);
-  --accent: oklch(0.75 0.04 50);
-  --accent-foreground: oklch(0.15 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.95 0.01 60);
-  --border: oklch(0.3 0 0);
-  --input: oklch(0.3 0 0);
-  --ring: oklch(0.75 0.04 50);
-  --chart-1: oklch(0.75 0.04 50);
-  --chart-2: oklch(0.65 0.03 40);
-  --chart-3: oklch(0.55 0.02 30);
-  --chart-4: oklch(0.85 0.02 60);
-  --chart-5: oklch(0.45 0.01 20);
-  --sidebar: oklch(0.18 0 0);
-  --sidebar-foreground: oklch(0.95 0.01 60);
-  --sidebar-primary: oklch(0.75 0.04 50);
-  --sidebar-primary-foreground: oklch(0.15 0 0);
-  --sidebar-accent: oklch(0.25 0 0);
-  --sidebar-accent-foreground: oklch(0.95 0.01 60);
-  --sidebar-border: oklch(0.3 0 0);
-  --sidebar-ring: oklch(0.75 0.04 50);
+  /* ========================================
+     PRÒVA DESIGN TOKENS — DARK MODE
+     ======================================== */
+
+  --background: oklch(0.13 0.005 60);
+  --foreground: oklch(0.93 0.005 75);
+
+  --card: oklch(0.175 0.005 60);
+  --card-foreground: oklch(0.93 0.005 75);
+  --popover: oklch(0.175 0.005 60);
+  --popover-foreground: oklch(0.93 0.005 75);
+
+  /* Primary — inverted: off-white CTA on dark */
+  --primary: oklch(0.93 0.005 75);
+  --primary-foreground: oklch(0.13 0.005 60);
+
+  --secondary: oklch(0.22 0.005 60);
+  --secondary-foreground: oklch(0.88 0.005 75);
+
+  --muted: oklch(0.2 0.003 60);
+  --muted-foreground: oklch(0.6 0.008 75);
+
+  /* Accent — slightly brighter gold in dark */
+  --accent: oklch(0.72 0.1 65);
+  --accent-foreground: oklch(0.13 0.005 60);
+
+  --destructive: oklch(0.45 0.18 25);
+  --destructive-foreground: oklch(0.93 0.005 75);
+  --success: oklch(0.58 0.12 155);
+  --success-foreground: oklch(0.93 0.005 75);
+  --warning: oklch(0.7 0.13 75);
+  --warning-foreground: oklch(0.13 0.005 60);
+  --info: oklch(0.6 0.09 240);
+  --info-foreground: oklch(0.93 0.005 75);
+
+  --border: oklch(0.27 0.003 60);
+  --input: oklch(0.27 0.003 60);
+  --ring: oklch(0.93 0.005 75);
+
+  --chart-1: oklch(0.93 0.005 75);
+  --chart-2: oklch(0.72 0.1 65);
+  --chart-3: oklch(0.6 0.008 75);
+  --chart-4: oklch(0.22 0.005 60);
+  --chart-5: oklch(0.58 0.12 155);
+
+  --sidebar: oklch(0.15 0.005 60);
+  --sidebar-foreground: oklch(0.93 0.005 75);
+  --sidebar-primary: oklch(0.93 0.005 75);
+  --sidebar-primary-foreground: oklch(0.13 0.005 60);
+  --sidebar-accent: oklch(0.2 0.003 60);
+  --sidebar-accent-foreground: oklch(0.88 0.005 75);
+  --sidebar-border: oklch(0.27 0.003 60);
+  --sidebar-ring: oklch(0.93 0.005 75);
 }
 
 @theme inline {
@@ -118,6 +174,12 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -160,32 +222,76 @@ h6 {
   font-family: var(--font-serif);
   font-weight: 500;
   letter-spacing: -0.02em;
-  line-height: 1.2;
+  line-height: 1.15;
 }
 
-/* Smooth Transitions */
-a,
-button {
-  transition: all 0.2s ease;
+/* Typography Scale Utilities */
+.text-display {
+  font-family: var(--font-serif);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
+  font-weight: 400;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+.text-headline {
+  font-family: var(--font-serif);
+  font-size: clamp(1.75rem, 3vw, 2.75rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.text-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.25rem, 2vw, 1.5rem);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.text-overline {
+  font-family: var(--font-sans);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+.text-body-lg {
+  font-family: var(--font-sans);
+  font-size: 1.125rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.7;
+}
+
+.text-caption {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.5;
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgb(var(--color-muted));
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--color-muted-foreground) / 0.3);
-  border-radius: 4px;
+  background: oklch(0.7 0 0 / 0.25);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--color-muted-foreground) / 0.5);
+  background: oklch(0.5 0 0 / 0.4);
 }
 
 /* Hide scrollbar for horizontal scroll */
@@ -464,4 +570,49 @@ button {
 [dir="rtl"] [type="email"] {
   direction: ltr;
   text-align: left;
+}
+
+/* ═══════════════════════════════════════
+   HOMEPAGE ANIMATIONS
+   ═══════════════════════════════════════ */
+
+/* Hero image subtle zoom */
+@keyframes hero-zoom {
+  from {
+    transform: scale(1.05);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.animate-hero-zoom {
+  animation: hero-zoom 10s ease-out forwards;
+}
+
+/* Fade in + slide up */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+
+/* Slow bounce for scroll indicator */
+@keyframes bounce-slow {
+  0%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) translateY(8px);
+  }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 2.5s ease-in-out infinite;
 }

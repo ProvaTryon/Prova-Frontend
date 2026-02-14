@@ -5,10 +5,11 @@ import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import Image from "next/image"
 import { Link } from "@/i18n/routing"
-import { Heart, Minus, Plus, Check } from "lucide-react"
+import { Heart, Minus, Plus, Check, ShoppingBag } from "lucide-react"
 import type { Product } from "@/lib/product-service"
 import { ProductCard } from "@/components/product/product-card"
 import { useTranslations } from "next-intl"
+import { useToast } from "@/hooks/use-toast"
 
 interface ProductDetailClientProps {
   product: any
@@ -55,16 +56,31 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
 
   const { addItem } = useCart()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
+  const { toast } = useToast()
   const isWishlisted = isInWishlist(mappedProduct.id)
+
+  const canAddToCart = selectedSize && selectedColor
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
-      alert(t("selectSizeAndColor"))
+      toast({
+        title: t("selectSizeAndColor"),
+        description: !selectedSize && !selectedColor
+          ? t("pleaseSelectBoth") || "Please select a size and color"
+          : !selectedSize
+            ? t("pleaseSelectSize") || "Please select a size"
+            : t("pleaseSelectColor") || "Please select a color",
+        variant: "destructive",
+      })
       return
     }
 
     addItem(mappedProduct, selectedSize, selectedColor, quantity)
     setAddedToCart(true)
+    toast({
+      title: t("addedToCart"),
+      description: `${mappedProduct.name} - ${selectedSize} / ${selectedColor}`,
+    })
     setTimeout(() => setAddedToCart(false), 2000)
   }
 
@@ -96,7 +112,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-24">
           {/* Images */}
           <div className="space-y-4">
-            <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-muted">
+            <div className="relative aspect-[3/4] overflow-hidden bg-muted">
               <Image
                 src={mappedProduct.images[selectedImage] || mappedProduct.image}
                 alt={mappedProduct.name}
@@ -109,7 +125,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
-                  className={`relative aspect-square overflow-hidden rounded-lg border-2 transition-colors ${selectedImage === idx ? "border-primary" : "border-transparent"
+                  className={`relative aspect-square overflow-hidden border-2 transition-colors ${selectedImage === idx ? "border-foreground" : "border-transparent"
                     }`}
                   aria-label={`View image ${idx + 1} of ${product.name}`}
                   title={`View image ${idx + 1}`}
@@ -128,19 +144,19 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
           {/* Product Info */}
           <div className="space-y-6">
             <div>
-              <p className="text-sm text-muted-foreground mb-2 no-flip">{mappedProduct.brand}</p>
+              <p className="text-overline text-muted-foreground mb-2 no-flip">{mappedProduct.brand}</p>
               <h1 className="font-serif text-4xl font-medium mb-4 no-flip">{mappedProduct.name}</h1>
               <div className="flex items-center gap-3 no-flip">
                 {mappedProduct.salePrice ? (
                   <>
-                    <span className="text-3xl font-semibold text-primary">${mappedProduct.salePrice}</span>
-                    <span className="text-xl text-muted-foreground line-through">${mappedProduct.price}</span>
-                    <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-medium">
+                    <span className="text-3xl font-semibold tabular-nums">${mappedProduct.salePrice}</span>
+                    <span className="text-xl text-muted-foreground line-through tabular-nums">${mappedProduct.price}</span>
+                    <span className="px-3 py-1 bg-foreground/10 text-foreground text-sm font-medium">
                       {t("save")} ${mappedProduct.price - mappedProduct.salePrice}
                     </span>
                   </>
                 ) : (
-                  <span className="text-3xl font-semibold">${mappedProduct.price}</span>
+                  <span className="text-3xl font-semibold tabular-nums">${mappedProduct.price}</span>
                 )}
               </div>
             </div>
@@ -157,9 +173,9 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                   <button
                     key={color}
                     onClick={() => setSelectedColor(color)}
-                    className={`px-4 py-2 border-2 rounded-lg transition-all no-flip ${selectedColor === color
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border hover:border-primary"
+                    className={`px-4 py-2 border-2 transition-all no-flip ${selectedColor === color
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border hover:border-foreground"
                       }`}
                   >
                     {color}
@@ -178,9 +194,9 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
-                    className={`px-4 py-2 border-2 rounded-lg transition-all no-flip ${selectedSize === size
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border hover:border-primary"
+                    className={`px-4 py-2 border-2 transition-all no-flip ${selectedSize === size
+                      ? "border-foreground bg-foreground text-background"
+                      : "border-border hover:border-foreground"
                       }`}
                   >
                     {size}
@@ -193,7 +209,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             <div>
               <label className="block text-sm font-semibold mb-3">{t("quantity")}</label>
               <div className="flex items-center gap-4">
-                <div className="flex items-center border border-border rounded-lg">
+                <div className="flex items-center border border-border">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="p-3 hover:bg-muted transition-colors"
@@ -215,9 +231,25 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
 
             {/* Actions */}
             <div className="space-y-3 pt-4">
+              {/* Variant selection hint */}
+              {!canAddToCart && (
+                <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4" />
+                  {!selectedSize && !selectedColor
+                    ? t("pleaseSelectBoth") || "Please select a size and color to add to cart"
+                    : !selectedSize
+                      ? t("pleaseSelectSize") || "Please select a size"
+                      : t("pleaseSelectColor") || "Please select a color"}
+                </p>
+              )}
               <button
                 onClick={handleAddToCart}
-                className="w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+                disabled={!canAddToCart}
+                className={`w-full py-4 font-medium transition-all flex items-center justify-center gap-2 ${
+                  canAddToCart
+                    ? "bg-foreground text-background hover:bg-foreground/90"
+                    : "bg-muted text-muted-foreground cursor-not-allowed"
+                }`}
               >
                 {addedToCart ? (
                   <>
@@ -230,15 +262,15 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
               </button>
               <Link
                 href="/virtual-tryon"
-                className="w-full py-4 border-2 border-foreground text-foreground rounded-lg font-medium hover:bg-foreground hover:text-background transition-all flex items-center justify-center"
+                className="w-full py-4 border-2 border-foreground text-foreground font-medium hover:bg-foreground hover:text-background transition-all flex items-center justify-center"
               >
                 {t("tryOnVirtually")}
               </Link>
               <button
                 onClick={handleWishlistToggle}
-                className="w-full py-4 border border-border rounded-lg font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2"
+                className="w-full py-4 border border-border font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2"
               >
-                <Heart className={`w-5 h-5 ${isWishlisted ? "fill-primary text-primary" : ""}`} />
+                <Heart className={`w-5 h-5 ${isWishlisted ? "fill-accent text-accent" : ""}`} />
                 {isWishlisted ? t("removeFromWishlist") : t("addToWishlist")}
               </button>
             </div>

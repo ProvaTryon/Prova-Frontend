@@ -144,9 +144,12 @@ export default function CartPage() {
                   <span className="no-flip">${(totalPrice + (totalPrice > 100 ? 0 : 10) + totalPrice * 0.08).toFixed(2)}</span>
                 </div>
 
-                <button className="w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all">
+                <Link
+                  href="/checkout"
+                  className="block w-full py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all text-center"
+                >
                   {t('checkout')}
-                </button>
+                </Link>
 
                 <Link
                   href="/shop"

@@ -67,7 +67,7 @@ export const getOrderById = async (orderId: string) => {
 };
 
 // ==========================================
-// 👤 جلب طلبات المستخدم
+// 👤 جلب طلبات المستخدم (legacy — needs userId)
 // ==========================================
 export const getUserOrders = async (userId: string) => {
     try {
@@ -82,7 +82,7 @@ export const getUserOrders = async (userId: string) => {
         });
 
         if (!response.ok) {
-            throw new Error('فشل جلب طلبات المستخدم');
+            throw new Error('Failed to fetch user orders');
         }
 
         return await response.json();
@@ -93,9 +93,73 @@ export const getUserOrders = async (userId: string) => {
 };
 
 // ==========================================
-// ➕ إنشاء طلب جديد
+// 🔐 جلب طلبات المستخدم الحالي (JWT-based)
 // ==========================================
-export const createOrder = async (orderData: any) => {
+export const getMyOrders = async () => {
+    try {
+        const token = localStorage.getItem('authToken');
+        if (!token) throw new Error('Not authenticated');
+
+        const response = await fetch(`${API_URL}/api/orders/me`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (response.status === 401) {
+            throw new Error('Not authenticated');
+        }
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.msg || 'Failed to fetch orders');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('❌ Error fetching my orders:', error);
+        throw error;
+    }
+};
+
+// ==========================================
+// ➕ إنشاء طلب جديد (Checkout flow)
+// ==========================================
+export interface CheckoutOrderPayload {
+    items: {
+        productId: string;
+        quantity: number;
+        price: number;
+        selectedSize?: string;
+        selectedColor?: string;
+    }[];
+    address: string;
+    paymentMethod: string;
+}
+
+export interface CreatedOrder {
+    _id: string;
+    user: string;
+    items: {
+        product: string;
+        quantity: number;
+        price: number;
+        selectedSize?: string;
+        selectedColor?: string;
+    }[];
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+    status: string;
+    address: string;
+    paymentMethod: string;
+    createdAt: string;
+}
+
+export const createOrder = async (orderData: CheckoutOrderPayload): Promise<CreatedOrder> => {
     try {
         const token = localStorage.getItem('authToken');
 
@@ -109,8 +173,8 @@ export const createOrder = async (orderData: any) => {
         });
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'فشل إنشاء الطلب');
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.msg || error.message || 'Failed to create order');
         }
 
         return await response.json();

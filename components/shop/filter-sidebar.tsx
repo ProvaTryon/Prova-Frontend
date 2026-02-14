@@ -89,7 +89,7 @@ export function FilterSidebar({
         {/* Header */}
         <div className="flex items-center justify-between mb-6 lg:mb-8">
           <h2 className="font-serif text-xl font-semibold">{t('filters')}</h2>
-          <button onClick={onClose} className="lg:hidden p-2 hover:bg-muted rounded-full" aria-label="Close filters">
+          <button onClick={onClose} className="lg:hidden p-2 hover:bg-muted" aria-label="Close filters">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -104,7 +104,7 @@ export function FilterSidebar({
 
         {/* Categories */}
         <div className="mb-8">
-          <h3 className="font-semibold mb-4">{t('category')}</h3>
+          <h3 className="text-[11px] font-medium tracking-[0.12em] uppercase mb-4">{t('category')}</h3>
           <div className="space-y-2">
             {categories.map((category) => (
               <label key={category.id} className="flex items-center gap-3 cursor-pointer group">
@@ -123,7 +123,7 @@ export function FilterSidebar({
 
         {/* Brands */}
         <div className="mb-8">
-          <h3 className="font-semibold mb-4">{t('brand')}</h3>
+          <h3 className="text-[11px] font-medium tracking-[0.12em] uppercase mb-4">{t('brand')}</h3>
           <div className="space-y-2">
             {availableBrands.length > 0 ? (
               availableBrands.map((brand) => (
@@ -145,7 +145,7 @@ export function FilterSidebar({
 
         {/* Price Range */}
         <div className="mb-8">
-          <h3 className="font-semibold mb-4">{t('priceRange')}</h3>
+          <h3 className="text-[11px] font-medium tracking-[0.12em] uppercase mb-4">{t('priceRange')}</h3>
           <div className="space-y-4">
             <input
               type="range"
@@ -173,7 +173,7 @@ export function FilterSidebar({
 
         {/* Sizes */}
         <div>
-          <h3 className="font-semibold mb-4">{t('size')}</h3>
+          <h3 className="text-[11px] font-medium tracking-[0.12em] uppercase mb-4">{t('size')}</h3>
           <div className="grid grid-cols-3 gap-2">
             {["XS", "S", "M", "L", "XL", "XXL"].map((size) => (
               <button
@@ -187,10 +187,10 @@ export function FilterSidebar({
                   onFilterChange(newFilters)
                 }}
                 className={`
-                  py-2 text-sm rounded-md border transition-all
+                  py-2 text-sm border transition-all
                   ${localFilters.sizes.includes(size)
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border hover:border-primary"
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-border hover:border-foreground"
                   }
                 `}
               >

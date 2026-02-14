@@ -20,6 +20,10 @@ export interface Product {
     colors: string[]
     image: string
     images: string[]
+    /** Cloudinary public_id for the main image */
+    imagePublicId?: string
+    /** Cloudinary public_ids for all images (main + additional) */
+    imagePublicIds?: string[]
     description: string
     inStock: boolean
     stock?: number
@@ -30,9 +34,39 @@ export interface Product {
 }
 
 // ==========================================
-// � Transform backend product to frontend format
+// 🖼️ Validate image URL
+// ==========================================
+const isValidImageUrl = (url: string | undefined | null): boolean => {
+    if (!url || typeof url !== 'string') return false;
+    const trimmed = url.trim();
+    if (!trimmed) return false;
+    // Reject malformed data URIs (e.g. "data:image/jpeg;base64:1")
+    if (trimmed.startsWith('data:')) return false;
+    // Accept relative paths (e.g. /placeholder.svg)
+    if (trimmed.startsWith('/')) return true;
+    // Accept valid http(s) URLs — reject known placeholder domains
+    try {
+        const parsed = new URL(trimmed);
+        if (parsed.hostname === 'example.com' || parsed.hostname === 'www.example.com') return false;
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        return false;
+    }
+};
+
+const sanitizeImageUrl = (url: string | undefined | null): string => {
+    return isValidImageUrl(url) ? url!.trim() : '';
+};
+
+// ==========================================
+// 🔄 Transform backend product to frontend format
 // ==========================================
 const transformProduct = (backendProduct: any): Product => {
+    const rawImages: string[] = (backendProduct.images || []).map(sanitizeImageUrl).filter(Boolean);
+    const mainImage = sanitizeImageUrl(backendProduct.images?.[0])
+        || sanitizeImageUrl(backendProduct.image)
+        || '';
+
     return {
         id: backendProduct._id || backendProduct.id,
         name: backendProduct.name || '',
@@ -42,8 +76,10 @@ const transformProduct = (backendProduct: any): Product => {
         category: backendProduct.category || '',
         sizes: backendProduct.sizes || [],
         colors: backendProduct.colors || [],
-        image: backendProduct.images?.[0] || backendProduct.image || '',
-        images: backendProduct.images || [],
+        image: mainImage,
+        images: rawImages.length > 0 ? rawImages : (mainImage ? [mainImage] : []),
+        imagePublicId: backendProduct.imagePublicId || '',
+        imagePublicIds: backendProduct.imagePublicIds || [],
         description: backendProduct.description || '',
         inStock: backendProduct.stock > 0 || backendProduct.inStock || false,
         stock: backendProduct.stock,

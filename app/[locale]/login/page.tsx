@@ -4,8 +4,8 @@ import type React from "react"
 
 import { useState } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Link } from "@/i18n/routing"
+import { useSearchParams } from "next/navigation"
+import { Link, useRouter } from "@/i18n/routing"
 import { Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 
@@ -46,9 +46,13 @@ export default function LoginPage() {
 
     try {
       const loggedInUser = await login(email, password)
-      router.push(getRedirectPath(loggedInUser.role))
-    } catch (err) {
-      setError(t("invalidCredentials"))
+      const redirectPath = getRedirectPath(loggedInUser.role)
+      console.log('✅ Login successful, redirecting to:', redirectPath, 'User:', loggedInUser)
+      router.push(redirectPath)
+    } catch (err: any) {
+      console.error('❌ Login page error:', err)
+      const errorMessage = err?.message || t("invalidCredentials")
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
@@ -60,10 +64,9 @@ export default function LoginPage() {
 
     try {
       await signInWithGoogle()
-      // Google sign-in will redirect separately when implemented
       router.push(getRedirectPath(user?.role))
-    } catch (err) {
-      setError(t("googleSignInFailed"))
+    } catch (err: any) {
+      setError(err?.message || t("googleSignInFailed"))
     } finally {
       setIsGoogleLoading(false)
     }

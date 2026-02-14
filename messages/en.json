@@ -34,11 +34,48 @@
     "hero": {
       "title": "It's Simply You",
       "subtitle": "#STAY_UNIQUE",
-      "established": "EST.2024"
+      "established": "EST.2024",
+      "overline": "New Season 2025",
+      "headline": "Dress the Life You Imagine",
+      "subheadline": "Premium fashion crafted for the modern individual — where confidence meets timeless style.",
+      "ctaPrimary": "Shop Collection",
+      "ctaSecondary": "Try It On",
+      "scroll": "Scroll"
     },
-    "bestSellers": "Best Sellers",
+    "featured": {
+      "overline": "Curated for You",
+      "title": "Featured Collections",
+      "label": "Collection",
+      "explore": "Explore Now"
+    },
+    "bestSellers": {
+      "overline": "Most Loved",
+      "title": "Best Sellers",
+      "empty": "No products available"
+    },
     "viewAll": "View All",
+    "tryon": {
+      "overline": "AI-Powered Experience",
+      "title": "See It on You Before You Buy",
+      "description": "Our virtual try-on technology lets you visualize any outfit on yourself — so every purchase feels effortless.",
+      "cta": "Try It Now",
+      "before": "Before",
+      "after": "After"
+    },
+    "testimonial": {
+      "quote": "The quality and attention to detail is extraordinary. Every piece feels like it was made just for me.",
+      "author": "Sarah M. — Verified Customer"
+    },
+    "newsletter": {
+      "overline": "Stay in the Loop",
+      "title": "Join the Inner Circle",
+      "description": "Be the first to know about new arrivals, exclusive offers, and style inspiration.",
+      "placeholder": "Your email address",
+      "cta": "Subscribe",
+      "success": "Welcome — you're in!"
+    },
     "collections": {
+      "overline": "Explore",
       "title": "{siteName} Collections",
       "casual": "Casual from {siteName}",
       "shirts": "Shirts from {siteName}",
@@ -60,7 +97,8 @@
     "category": "Category",
     "inStock": "In Stock",
     "outOfStock": "Out of Stock",
-    "sale": "SALE"
+    "sale": "SALE",
+    "quickView": "Quick View"
   },
   "cart": {
     "title": "Shopping Cart",
@@ -116,6 +154,9 @@
     "addToWishlist": "Add to Wishlist",
     "removeFromWishlist": "Remove from Wishlist",
     "selectSizeAndColor": "Please select size and color",
+    "pleaseSelectBoth": "Please select a size and color to add to cart",
+    "pleaseSelectSize": "Please select a size",
+    "pleaseSelectColor": "Please select a color",
     "save": "Save",
     "productDetails": "Product Details",
     "premiumMaterials": "Premium quality materials",
@@ -256,6 +297,7 @@
     "sortName": "Name: A to Z"
   },
   "common": {
+    "shop": "Shop",
     "search": "Search",
     "filter": "Filter",
     "sort": "Sort",
@@ -671,5 +713,41 @@
       "subtitle": "Create an account to save your preferences and get even better suggestions tailored to your unique style",
       "button": "Create Account"
     }
+  },
+  "checkout": {
+    "title": "Checkout",
+    "signInRequired": "Sign In Required",
+    "signInDescription": "Please sign in to your account to proceed with checkout.",
+    "signIn": "Sign In",
+    "addItemsFirst": "Add some items to your cart before checking out.",
+    "backToCart": "Back to Cart",
+    "shippingInfo": "Shipping Information",
+    "fullName": "Full Name",
+    "email": "Email",
+    "phone": "Phone",
+    "address": "Address",
+    "city": "City",
+    "zipCode": "ZIP Code",
+    "country": "Country",
+    "paymentMethod": "Payment Method",
+    "cashOnDelivery": "Cash on Delivery",
+    "codDescription": "Pay when you receive your order.",
+    "placeOrder": "Place Order",
+    "processing": "Processing…",
+    "fillRequired": "Please fill in name, phone, and address.",
+    "orderPlaced": "Order Placed!",
+    "orderPlacedDescription": "Your order has been successfully placed.",
+    "orderFailed": "Order Failed",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "orderSuccess": {
+    "title": "Thank You for Your Order!",
+    "description": "Your order has been confirmed and is being processed. You will receive a confirmation email shortly.",
+    "orderDetails": "Order Details",
+    "orderId": "Order ID",
+    "status": "Status",
+    "orderIdLabel": "Order ID",
+    "continueShopping": "Continue Shopping",
+    "viewOrders": "View My Orders"
   }
 }

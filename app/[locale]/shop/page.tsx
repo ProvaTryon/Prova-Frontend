@@ -118,9 +118,9 @@ export default function ShopPage() {
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="font-serif text-4xl sm:text-5xl font-medium mb-4">{t('title')}</h1>
-            <p className="text-muted-foreground">{t('subtitle')}</p>
+          <div className="mb-10">
+            <h1 className="text-display mb-3">{t('title')}</h1>
+            <p className="text-body-lg text-muted-foreground">{t('subtitle')}</p>
           </div>
 
           {/* Search and Controls */}
@@ -133,7 +133,7 @@ export default function ShopPage() {
                 placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full pl-10 pr-4 py-3 border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20"
               />
             </div>
 
@@ -141,7 +141,7 @@ export default function ShopPage() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              className="px-4 py-3 border border-border focus:outline-none focus:ring-2 focus:ring-foreground/20 bg-background"
               aria-label={t('sortBy')}
             >
               <option value="featured">{t('sortFeatured')}</option>
@@ -154,7 +154,7 @@ export default function ShopPage() {
             {/* Mobile Filter Button */}
             <button
               onClick={() => setFiltersOpen(true)}
-              className="lg:hidden flex items-center gap-2 px-4 py-3 border border-border rounded-lg hover:bg-muted transition-colors"
+              className="lg:hidden flex items-center gap-2 px-4 py-3 border border-border hover:bg-muted transition-colors"
             >
               <SlidersHorizontal className="w-5 h-5" />
               {t('filters')}
@@ -163,7 +163,7 @@ export default function ShopPage() {
 
           {/* Error State */}
           {error && (
-            <div className="mb-8 p-4 bg-destructive/10 text-destructive rounded-lg">
+            <div className="mb-8 p-4 bg-destructive/10 text-destructive">
               {error}
             </div>
           )}
@@ -186,7 +186,7 @@ export default function ShopPage() {
 
               {/* Products Grid */}
               <div className="flex-1">
-                <div className="mb-4 text-sm text-muted-foreground">
+                <div className="mb-6 text-overline text-muted-foreground">
                   {filteredProducts.length} products
                 </div>
 
