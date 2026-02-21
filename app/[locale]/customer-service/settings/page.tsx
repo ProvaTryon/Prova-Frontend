@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { motion } from "framer-motion"
 
 export default function CSSettings() {
   const t = useTranslations("customerService.settings")
@@ -23,12 +24,22 @@ export default function CSSettings() {
 
   return (
     <div className="p-8 max-w-3xl">
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-8"
+      >
         <h1 className="text-3xl font-serif mb-2">{t("title")}</h1>
         <p className="text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      </motion.div>
 
-      <div className="bg-card p-6 rounded-lg border space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-card p-6 rounded-xl border shadow-sm space-y-6"
+      >
         <div>
           <Label htmlFor="name">{t("name")}</Label>
           <Input id="name" value={name} onChange={(e) => setName(e.target.value)} className="mt-2" />
@@ -53,7 +64,7 @@ export default function CSSettings() {
             {isSaving ? t("saving") : t("saveChanges")}
           </Button>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }

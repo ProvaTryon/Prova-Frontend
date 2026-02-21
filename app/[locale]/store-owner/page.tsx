@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context"
 import { productService, type Product } from "@/lib/product-service"
 import { Package, DollarSign, ShoppingCart, TrendingUp, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 export default function StoreOwnerDashboard() {
   const t = useTranslations('storeOwner.dashboard')
@@ -69,29 +70,46 @@ export default function StoreOwnerDashboard() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-8"
+      >
         <h1 className="text-3xl font-serif mb-2">{t('welcome', { name: user?.name || 'User' })}</h1>
         <p className="text-muted-foreground">{t('subtitle', { storeName: 'Your Store' })}</p>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => {
+        {stats.map((stat, index) => {
           const Icon = stat.icon
           return (
-            <div key={stat.label} className="bg-card p-6 rounded-lg border">
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.4 }}
+              whileHover={{ y: -2 }}
+              className="bg-card p-6 rounded-xl border shadow-sm hover:shadow-md transition-shadow"
+            >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm text-muted-foreground">{stat.label}</span>
                 <Icon className="w-5 h-5 text-muted-foreground" />
               </div>
               <div className="text-3xl font-bold mb-2">{stat.value}</div>
               <p className="text-sm text-green-600">{stat.change}</p>
-            </div>
+            </motion.div>
           )
         })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card p-6 rounded-lg border">
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-card p-6 rounded-xl border shadow-sm"
+        >
           <h2 className="text-xl font-serif mb-4">{t('recentProducts')}</h2>
           {loading ? (
             <div className="flex justify-center py-8">
@@ -124,9 +142,14 @@ export default function StoreOwnerDashboard() {
           <Link href={`/${locale}/store-owner/products`} className="text-sm text-primary hover:underline mt-4 inline-block">
             {t('viewAllProducts')} →
           </Link>
-        </div>
+        </motion.div>
 
-        <div className="bg-card p-6 rounded-lg border">
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="bg-card p-6 rounded-xl border shadow-sm"
+        >
           <h2 className="text-xl font-serif mb-4">{t('quickActions')}</h2>
           <div className="space-y-3">
             <Link
@@ -151,7 +174,7 @@ export default function StoreOwnerDashboard() {
               <p className="text-sm text-muted-foreground">{t('storeSettingsDesc')}</p>
             </Link>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

@@ -57,6 +57,7 @@ export default function ProductsManagement() {
         price: product.price,
         stock: product.inStock ? 100 : 0, // Backend uses stock, not inStock
         category: product.category,
+        type: (product as any).type || '',
         brand: product.brand,
         sizes: product.sizes,
         colors: product.colors,
@@ -87,6 +88,7 @@ export default function ProductsManagement() {
         price: product.price,
         stock: product.inStock ? (product.stock || 100) : 0,
         category: product.category,
+        type: (product as any).type || '',
         brand: product.brand,
         sizes: product.sizes,
         colors: product.colors,
@@ -257,7 +259,7 @@ export default function ProductsManagement() {
       <ProductFormModal
         isOpen={isModalOpen}
         onClose={closeModal}
-        onSubmit={editingProduct ? handleEditProduct : handleAddProduct}
+        onSubmit={(editingProduct ? handleEditProduct : handleAddProduct) as (product: Product | Omit<Product, "id">) => void}
         product={editingProduct}
         availableBrands={availableBrands}
       />

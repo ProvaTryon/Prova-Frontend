@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { motion } from "framer-motion"
 
 export default function StoreOwnerSettings() {
   const t = useTranslations("storeOwner.settings")
@@ -14,6 +15,7 @@ export default function StoreOwnerSettings() {
   const [storeName, setStoreName] = useState("")
   const [description, setDescription] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+  const store = { status: "active" as const } // Placeholder until store API is available
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -24,12 +26,22 @@ export default function StoreOwnerSettings() {
 
   return (
     <div className="p-8 max-w-3xl">
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-8"
+      >
         <h1 className="text-3xl font-serif mb-2">{t("title")}</h1>
         <p className="text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      </motion.div>
 
-      <div className="bg-card p-6 rounded-lg border space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-card p-6 rounded-xl border shadow-sm space-y-6"
+      >
         <div>
           <Label htmlFor="storeName">{t("storeName")}</Label>
           <Input id="storeName" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="mt-2" />
@@ -77,7 +89,7 @@ export default function StoreOwnerSettings() {
             {isSaving ? t("saving") : t("saveChanges")}
           </Button>
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }

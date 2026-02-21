@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { Link } from "@/i18n/routing"
 import { Loader2, Mail, CheckCircle, Lock } from "lucide-react"
 import { useTranslations } from "next-intl"
+import Image from "next/image"
 import * as forgotPasswordService from "@/lib/forgot-password-service"
 
 type Step = "email" | "otp" | "password" | "success"
@@ -125,7 +126,14 @@ export default function ForgotPasswordPage() {
                 <div className="w-full max-w-md">
                     <div className="text-center mb-8">
                         <Link href="/" className="inline-block">
-                            <span className="font-serif text-3xl font-semibold">{siteName}</span>
+                            <Image
+                              src="https://res.cloudinary.com/dmjh6qjna/image/upload/v1771679326/Picture2_uyt4oe.png"
+                              alt="Prova"
+                              width={150}
+                              height={50}
+                              className="h-12 w-auto object-contain mx-auto"
+                              priority
+                            />
                         </Link>
                         <h1 className="font-serif text-3xl font-medium mt-6 mb-2">Reset Password</h1>
                         <p className="text-muted-foreground">Enter your email to receive a reset code</p>
@@ -197,7 +205,14 @@ export default function ForgotPasswordPage() {
                 <div className="w-full max-w-md">
                     <div className="text-center mb-8">
                         <Link href="/" className="inline-block">
-                            <span className="font-serif text-3xl font-semibold">{siteName}</span>
+                            <Image
+                              src="https://res.cloudinary.com/dmjh6qjna/image/upload/v1771679326/Picture2_uyt4oe.png"
+                              alt="Prova"
+                              width={150}
+                              height={50}
+                              className="h-12 w-auto object-contain mx-auto"
+                              priority
+                            />
                         </Link>
                         <h1 className="font-serif text-3xl font-medium mt-6 mb-2">Verify Code</h1>
                         <p className="text-muted-foreground">We sent a code to {email}</p>
@@ -286,7 +301,14 @@ export default function ForgotPasswordPage() {
                 <div className="w-full max-w-md">
                     <div className="text-center mb-8">
                         <Link href="/" className="inline-block">
-                            <span className="font-serif text-3xl font-semibold">{siteName}</span>
+                            <Image
+                              src="https://res.cloudinary.com/dmjh6qjna/image/upload/v1771679326/Picture2_uyt4oe.png"
+                              alt="Prova"
+                              width={150}
+                              height={50}
+                              className="h-12 w-auto object-contain mx-auto"
+                              priority
+                            />
                         </Link>
                         <h1 className="font-serif text-3xl font-medium mt-6 mb-2">Create New Password</h1>
                         <p className="text-muted-foreground">Enter your new password below</p>

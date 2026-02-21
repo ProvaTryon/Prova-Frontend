@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import { mockConversations } from "@/lib/mock-data"
 import { MessageSquare, Clock, CheckCircle, AlertCircle } from "lucide-react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 export default function CustomerServiceDashboard() {
   const t = useTranslations('customerService.dashboard')
@@ -52,16 +53,28 @@ export default function CustomerServiceDashboard() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-8"
+      >
         <h1 className="text-3xl font-serif mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">{t('subtitle')}</p>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => {
+        {stats.map((stat, index) => {
           const Icon = stat.icon
           return (
-            <div key={stat.label} className="bg-card p-6 rounded-lg border">
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.4 }}
+              whileHover={{ y: -2 }}
+              className="bg-card p-6 rounded-xl border shadow-sm hover:shadow-md transition-shadow"
+            >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-sm text-muted-foreground">{stat.label}</span>
                 <div className={`p-2 rounded-lg ${stat.bgColor}`}>
@@ -69,13 +82,18 @@ export default function CustomerServiceDashboard() {
                 </div>
               </div>
               <div className="text-3xl font-bold">{stat.value}</div>
-            </div>
+            </motion.div>
           )
         })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card p-6 rounded-lg border">
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-card p-6 rounded-xl border shadow-sm"
+        >
           <h2 className="text-xl font-serif mb-4">{t('recentConversations')}</h2>
           <div className="space-y-3">
             {recentConversations.map((conv) => {
@@ -129,9 +147,14 @@ export default function CustomerServiceDashboard() {
           >
             {t('viewAll')} →
           </Link>
-        </div>
+        </motion.div>
 
-        <div className="bg-card p-6 rounded-lg border">
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="bg-card p-6 rounded-xl border shadow-sm"
+        >
           <h2 className="text-xl font-serif mb-4">{t('priorityQueue')}</h2>
           <div className="space-y-3">
             {mockConversations
@@ -156,7 +179,7 @@ export default function CustomerServiceDashboard() {
               <p className="text-sm text-muted-foreground text-center py-8">{t('noPriorityConversations')}</p>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

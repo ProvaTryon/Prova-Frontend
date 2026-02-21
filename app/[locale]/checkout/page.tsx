@@ -11,6 +11,7 @@ import Image from "next/image"
 import * as orderService from "@/lib/order-service"
 import { useTranslations } from "next-intl"
 import { useToast } from "@/hooks/use-toast"
+import { motion } from "framer-motion"
 
 /* ── Constants (must match cart page) ── */
 const TAX_RATE = 0.08
@@ -154,7 +155,11 @@ export default function CheckoutPage() {
 
                     <div className="grid md:grid-cols-2 gap-12">
                         {/* ── Checkout Form ── */}
-                        <div>
+                        <motion.div
+                            initial={{ opacity: 0, x: -24 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                        >
                             <h2 className="font-serif text-2xl font-medium mb-6">{t("title")}</h2>
 
                             {error && (
@@ -278,13 +283,17 @@ export default function CheckoutPage() {
                                     )}
                                 </button>
                             </form>
-                        </div>
+                        </motion.div>
 
                         {/* ── Order Summary ── */}
-                        <div>
+                        <motion.div
+                            initial={{ opacity: 0, x: 24 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                        >
                             <h2 className="font-serif text-2xl font-medium mb-6">{tCart("orderSummary")}</h2>
 
-                            <div className="bg-muted/50 p-6 rounded-lg sticky top-8">
+                            <div className="bg-muted/50 p-6 rounded-xl sticky top-8 shadow-sm">
                                 <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                                     {items.map((item, index) => (
                                         <div key={index} className="flex gap-4 pb-4 border-b border-border last:border-0">
@@ -331,7 +340,7 @@ export default function CheckoutPage() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
                 </div>
             </main>

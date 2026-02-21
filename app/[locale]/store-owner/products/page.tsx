@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ProductFormModal } from "@/components/admin/product-form-modal"
 import { useToast } from "@/hooks/use-toast"
+import { motion, AnimatePresence } from "framer-motion"
 
 // Default brands for merchants to choose from
 const defaultBrands = [
@@ -39,17 +40,17 @@ export default function StoreOwnerProducts() {
     return allBrands.sort()
   }, [products])
 
-  // Fetch products from backend - filtered by merchant name
+  // Fetch products from backend - filtered by merchant ID
   useEffect(() => {
     fetchProducts()
-  }, [user?.name])
+  }, [user?.id])
 
   const fetchProducts = async () => {
     try {
       setLoading(true)
-      // Filter products by merchant name (user's name)
-      if (user?.name) {
-        const merchantProducts = await productService.getProductsByMerchantName(user.name)
+      // Fetch products by merchant ID using the proper backend endpoint
+      if (user?.id) {
+        const merchantProducts = await productService.getProductsByMerchant(user.id)
         setProducts(merchantProducts || [])
       } else {
         setProducts([])
@@ -99,6 +100,7 @@ export default function StoreOwnerProducts() {
         name: productData.name,
         description: productData.description,
         price: productData.price,
+        salePrice: productData.salePrice || undefined,
         stock: productData.stock || 10,
         category: productData.category,
         images: productData.images || [productData.image],
@@ -111,7 +113,7 @@ export default function StoreOwnerProducts() {
         material: (productData as any).material || '',
         tags: (productData as any).tags || [],
         merchant: String(user.id),
-        merchantName: productData.merchantName || user?.name || '',
+        merchantName: user?.name || productData.merchantName || '',
       }
 
       if ('id' in productData && productData.id) {
@@ -174,7 +176,12 @@ export default function StoreOwnerProducts() {
 
   return (
     <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex items-center justify-between mb-8"
+      >
         <div>
           <h1 className="text-3xl font-serif mb-2">{t("title")}</h1>
           <p className="text-muted-foreground">{t("subtitle")}</p>
@@ -183,7 +190,7 @@ export default function StoreOwnerProducts() {
           <Plus className="w-4 h-4" />
           {t("addProduct")}
         </Button>
-      </div>
+      </motion.div>
 
       <div className="mb-6">
         <div className="relative">
@@ -198,7 +205,12 @@ export default function StoreOwnerProducts() {
         </div>
       </div>
 
-      <div className="bg-card rounded-lg border overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-card rounded-xl border shadow-sm overflow-hidden"
+      >
         {loading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="w-8 h-8 animate-spin" />
@@ -295,7 +307,7 @@ export default function StoreOwnerProducts() {
             )}
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Product Form Modal */}
       <ProductFormModal
@@ -307,6 +319,7 @@ export default function StoreOwnerProducts() {
         onSubmit={handleSubmitProduct}
         product={editingProduct}
         availableBrands={availableBrands}
+        userName={user?.name}
       />
     </div>
   )

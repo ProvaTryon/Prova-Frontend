@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Label } from "@/components/ui/label"
+import { motion, AnimatePresence } from "framer-motion"
 
 // ── Zod schema for profile form (mirrors backend validation) ──
 const profileFormSchema = z.object({
@@ -168,12 +169,24 @@ export default function ProfilePage() {
 
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="font-serif text-4xl font-medium mb-8">{t("myAccount")}</h1>
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="font-serif text-4xl font-medium mb-8"
+          >
+            {t("myAccount")}
+          </motion.h1>
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Sidebar */}
-            <div className="lg:col-span-1">
-              <div className="bg-card border border-border rounded-lg p-4 space-y-2">
+            <motion.div
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+              className="lg:col-span-1"
+            >
+              <div className="bg-card border border-border rounded-xl p-4 space-y-2 shadow-sm">
                 <button
                   onClick={() => setActiveTab("profile")}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === "profile" ? "bg-primary text-primary-foreground" : "hover:bg-muted"
@@ -207,13 +220,26 @@ export default function ProfilePage() {
                   {t("settings")}
                 </button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Content */}
-            <div className="lg:col-span-3">
-              <div className="bg-card border border-border rounded-lg p-6">
+            <motion.div
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="lg:col-span-3"
+            >
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                <AnimatePresence mode="wait">
                 {activeTab === "profile" && (
-                  <div className="space-y-6">
+                  <motion.div
+                    key="profile"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                  >
                     <h2 className="font-serif text-2xl font-medium">{t("profileInformation")}</h2>
 
                     {loading ? (
@@ -329,11 +355,18 @@ export default function ProfilePage() {
                         </form>
                       </Form>
                     )}
-                  </div>
+                  </motion.div>
                 )}
 
                 {activeTab === "orders" && (
-                  <div className="space-y-6">
+                  <motion.div
+                    key="orders"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                  >
                     <h2 className="font-serif text-2xl font-medium">{t("orderHistory")}</h2>
 
                     {ordersLoading && (
@@ -431,11 +464,18 @@ export default function ProfilePage() {
                         })}
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 )}
 
                 {activeTab === "wishlist" && (
-                  <div className="space-y-6">
+                  <motion.div
+                    key="wishlist"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                  >
                     <h2 className="font-serif text-2xl font-medium">{t("myWishlist")}</h2>
 
                     {wishlistItems.length === 0 ? (
@@ -481,11 +521,18 @@ export default function ProfilePage() {
                         ))}
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 )}
 
                 {activeTab === "settings" && (
-                  <div className="space-y-6">
+                  <motion.div
+                    key="settings"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                  >
                     <h2 className="font-serif text-2xl font-medium">{t("accountSettings")}</h2>
                     <div className="space-y-4">
                       <div>
@@ -511,10 +558,11 @@ export default function ProfilePage() {
                         </label>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
       </main>

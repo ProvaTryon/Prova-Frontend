@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/lib/auth-context"
 import { TrendingUp, DollarSign, ShoppingCart, Users } from "lucide-react"
+import { motion } from "framer-motion"
 
 export default function StoreOwnerAnalytics() {
   const t = useTranslations("storeOwner.analytics")
@@ -26,51 +27,51 @@ export default function StoreOwnerAnalytics() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-8"
+      >
         <h1 className="text-3xl font-serif mb-2">{t("title")}</h1>
         <p className="text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-card p-6 rounded-lg border">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-muted-foreground">{t("totalRevenue")}</span>
-            <DollarSign className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div className="text-3xl font-bold mb-2">$0</div>
-          <p className="text-sm text-green-600">+12% {t("fromLastMonth")}</p>
-        </div>
-
-        <div className="bg-card p-6 rounded-lg border">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-muted-foreground">{t("totalOrders")}</span>
-            <ShoppingCart className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div className="text-3xl font-bold mb-2">0</div>
-          <p className="text-sm text-green-600">+8% {t("fromLastMonth")}</p>
-        </div>
-
-        <div className="bg-card p-6 rounded-lg border">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-muted-foreground">{t("avgOrderValue")}</span>
-            <TrendingUp className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div className="text-3xl font-bold mb-2">$0</div>
-          <p className="text-sm text-green-600">+3% {t("fromLastMonth")}</p>
-        </div>
-
-        <div className="bg-card p-6 rounded-lg border">
-          <div className="flex items-center justify-between mb-4">
-            <span className="text-sm text-muted-foreground">{t("customers")}</span>
-            <Users className="w-5 h-5 text-muted-foreground" />
-          </div>
-          <div className="text-3xl font-bold mb-2">1,234</div>
-          <p className="text-sm text-green-600">+15% {t("fromLastMonth")}</p>
-        </div>
+        {[
+          { icon: DollarSign, label: t("totalRevenue"), value: "$0", change: "+12%" },
+          { icon: ShoppingCart, label: t("totalOrders"), value: "0", change: "+8%" },
+          { icon: TrendingUp, label: t("avgOrderValue"), value: "$0", change: "+3%" },
+          { icon: Users, label: t("customers"), value: "1,234", change: "+15%" },
+        ].map((stat, index) => {
+          const Icon = stat.icon
+          return (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1, duration: 0.4 }}
+              whileHover={{ y: -2 }}
+              className="bg-card p-6 rounded-xl border shadow-sm hover:shadow-md transition-shadow"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm text-muted-foreground">{stat.label}</span>
+                <Icon className="w-5 h-5 text-muted-foreground" />
+              </div>
+              <div className="text-3xl font-bold mb-2">{stat.value}</div>
+              <p className="text-sm text-green-600">{stat.change} {t("fromLastMonth")}</p>
+            </motion.div>
+          )
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card p-6 rounded-lg border">
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-card p-6 rounded-xl border shadow-sm"
+        >
           <h2 className="text-xl font-serif mb-6">{t("salesOverview")}</h2>
           <div className="space-y-4">
             {salesData.map((data, index) => {
@@ -92,9 +93,14 @@ export default function StoreOwnerAnalytics() {
               )
             })}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-card p-6 rounded-lg border">
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="bg-card p-6 rounded-xl border shadow-sm"
+        >
           <h2 className="text-xl font-serif mb-6">{t("topProducts")}</h2>
           <div className="space-y-4">
             {topProducts.map((product, index) => (
@@ -113,7 +119,7 @@ export default function StoreOwnerAnalytics() {
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div >
   )

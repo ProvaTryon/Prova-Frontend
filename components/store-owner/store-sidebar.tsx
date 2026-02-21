@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname, useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { Package, BarChart3, Settings, Home, Store, ShoppingCart, Building2 } from "lucide-react"
+import { motion } from "framer-motion"
 
 export function StoreSidebar() {
   const pathname = usePathname()
@@ -24,7 +25,12 @@ export function StoreSidebar() {
   return (
     <aside className="w-64 bg-primary text-primary-foreground min-h-screen p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-serif">{tTitle('title')}</h2>
+        <motion.h2
+          initial={{ opacity: 0, x: -12 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4 }}
+          className="text-2xl font-serif"
+        >{tTitle('title')}</motion.h2>
         <p className="text-sm opacity-80 mt-1">{tTitle('subtitle')}</p>
       </div>
 
@@ -37,20 +43,26 @@ export function StoreSidebar() {
       </Link>
 
       <nav className="space-y-2">
-        {links.map((link) => {
+        {links.map((link, index) => {
           const Icon = link.icon
           const isActive = pathname === link.href
 
           return (
-            <Link
+            <motion.div
               key={link.href}
-              href={link.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? "bg-primary-foreground text-primary" : "hover:bg-primary-foreground/10"
-                }`}
+              initial={{ opacity: 0, x: -16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 + index * 0.05, duration: 0.3 }}
             >
-              <Icon className="w-5 h-5" />
-              <span>{link.label}</span>
-            </Link>
+              <Link
+                href={link.href}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${isActive ? "bg-primary-foreground text-primary shadow-sm" : "hover:bg-primary-foreground/10"
+                  }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span>{link.label}</span>
+              </Link>
+            </motion.div>
           )
         })}
       </nav>

@@ -6,6 +6,7 @@ import { Search, Eye, Package, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { OrderDetailsModal } from "@/components/admin/order-details-modal"
 import * as orderService from "@/lib/order-service"
+import { motion } from "framer-motion"
 
 // Backend Order structure
 interface Order {
@@ -170,29 +171,35 @@ export default function MerchantOrdersPage() {
 
     return (
         <div>
-            <div className="mb-8">
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="mb-8"
+            >
                 <h1 className="font-serif text-3xl font-semibold mb-2">{t('title')}</h1>
                 <p className="text-muted-foreground">{t('subtitle')}</p>
-            </div>
+            </motion.div>
 
-            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-background border border-border rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground mb-1">{t('totalOrders')}</p>
-                    <p className="text-2xl font-bold">{orders.length}</p>
-                </div>
-                <div className="bg-background border border-border rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground mb-1">{t('totalRevenue')}</p>
-                    <p className="text-2xl font-bold">${totalRevenue.toFixed(2)}</p>
-                </div>
-                <div className="bg-background border border-border rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground mb-1">{t('pending')}</p>
-                    <p className="text-2xl font-bold">{pendingOrders}</p>
-                </div>
-                <div className="bg-background border border-border rounded-lg p-4">
-                    <p className="text-sm text-muted-foreground mb-1">{t('shipped')}</p>
-                    <p className="text-2xl font-bold">{shippedOrders}</p>
-                </div>
+                {[
+                  { label: t('totalOrders'), value: orders.length },
+                  { label: t('totalRevenue'), value: `$${totalRevenue.toFixed(2)}` },
+                  { label: t('pending'), value: pendingOrders },
+                  { label: t('shipped'), value: shippedOrders },
+                ].map((stat, index) => (
+                  <motion.div
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1, duration: 0.4 }}
+                    whileHover={{ y: -2 }}
+                    className="bg-background border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
+                  </motion.div>
+                ))}
             </div>
 
             {/* Search */}
@@ -209,8 +216,12 @@ export default function MerchantOrdersPage() {
                 </div>
             </div>
 
-            {/* Orders Table */}
-            <div className="bg-background border border-border rounded-lg overflow-hidden">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="bg-background border border-border rounded-xl shadow-sm overflow-hidden"
+            >
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead className="bg-muted/50 border-b border-border">
@@ -292,7 +303,7 @@ export default function MerchantOrdersPage() {
                         <p className="text-muted-foreground">{t('noOrdersFound')}</p>
                     </div>
                 )}
-            </div>
+            </motion.div>
 
             {/* Order Details Modal */}
             <OrderDetailsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} order={selectedOrder} />

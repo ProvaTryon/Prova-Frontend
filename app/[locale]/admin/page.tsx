@@ -7,6 +7,7 @@ import * as merchantService from "@/lib/merchant-service"
 import * as userService from "@/lib/user-service"
 import * as productService from "@/lib/product-service"
 import * as orderService from "@/lib/order-service"
+import { motion } from "framer-motion"
 
 // Backend data structures
 interface Merchant {
@@ -129,19 +130,28 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-8"
+      >
         <h1 className="font-serif text-3xl font-semibold mb-2">{t('title')}</h1>
         <p className="text-muted-foreground">{t('welcome')}</p>
-      </div>
+      </motion.div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => {
+        {stats.map((stat, index) => {
           const Icon = stat.icon
           return (
-            <div
+            <motion.div
               key={stat.name}
-              className="bg-background border border-border rounded-lg p-6 hover:shadow-md transition-shadow"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={{ y: -2, transition: { duration: 0.2 } }}
+              className="bg-background border border-border rounded-xl p-6 hover:shadow-lg transition-shadow"
             >
               <div className="flex items-center justify-between mb-4">
                 <div className={`p-3 rounded-lg ${stat.bgColor}`}>
@@ -151,14 +161,19 @@ export default function AdminDashboard() {
               </div>
               <h3 className="text-2xl font-bold mb-1">{stat.value}</h3>
               <p className="text-sm text-muted-foreground">{stat.name}</p>
-            </div>
+            </motion.div>
           )
         })}
       </div>
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-background border border-border rounded-lg p-6">
+        <motion.div
+          initial={{ opacity: 0, x: -16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="bg-background border border-border rounded-xl p-6 shadow-sm"
+        >
           <h2 className="font-serif text-xl font-semibold mb-4">Recent Merchants</h2>
           <div className="space-y-4">
             {merchants.length > 0 ? (
@@ -180,9 +195,14 @@ export default function AdminDashboard() {
               <p className="text-sm text-muted-foreground text-center py-4">No merchants found</p>
             )}
           </div>
-        </div>
+        </motion.div>
 
-        <div className="bg-background border border-border rounded-lg p-6">
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="bg-background border border-border rounded-xl p-6 shadow-sm"
+        >
           <h2 className="font-serif text-xl font-semibold mb-4">{t('recentOrders')}</h2>
           <div className="space-y-4">
             {recentOrders.length > 0 ? (
@@ -208,7 +228,7 @@ export default function AdminDashboard() {
               <p className="text-sm text-muted-foreground text-center py-4">No recent orders</p>
             )}
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   )

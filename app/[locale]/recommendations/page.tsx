@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/product/product-card"
 import { productService, type Product } from "@/lib/product-service"
 import { Sparkles, RefreshCw, TrendingUp, Heart, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { motion } from "framer-motion"
 
 export default function RecommendationsPage() {
   const t = useTranslations("recommendations")
@@ -41,7 +42,12 @@ export default function RecommendationsPage() {
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
+          >
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4">
               <Sparkles className="w-4 h-4" />
               {t("personalizedBadge")}
@@ -50,7 +56,7 @@ export default function RecommendationsPage() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {t("subtitle")}
             </p>
-          </div>
+          </motion.div>
 
           {/* Based on Your Browsing */}
           {loading ? (

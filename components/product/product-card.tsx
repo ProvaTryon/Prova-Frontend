@@ -7,6 +7,7 @@ import type { Product } from "@/lib/product-service"
 import { useWishlist } from "@/lib/wishlist-context"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/routing"
+import { motion } from "framer-motion"
 
 const PLACEHOLDER = "/placeholder.svg"
 
@@ -99,8 +100,10 @@ export function ProductCard({ product }: ProductCardProps) {
       </Link>
 
       {/* Wishlist — visible on mobile, hover-reveal on desktop */}
-      <button
+      <motion.button
         onClick={handleWishlistToggle}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
         className="absolute top-3 end-3 w-9 h-9 bg-background/80 backdrop-blur-sm flex items-center justify-center md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 hover:bg-background"
         aria-label={isWishlisted ? t('addToWishlist') : t('addToWishlist')}
       >
@@ -110,7 +113,7 @@ export function ProductCard({ product }: ProductCardProps) {
             : "text-foreground/70 hover:text-foreground"
             }`}
         />
-      </button>
+      </motion.button>
     </div>
   )
 }

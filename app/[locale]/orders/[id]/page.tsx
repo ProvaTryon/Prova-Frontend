@@ -7,6 +7,7 @@ import { useSearchParams } from "next/navigation"
 import { Link } from "@/i18n/routing"
 import { Loader2, CheckCircle, ArrowLeft } from "lucide-react"
 import * as orderService from "@/lib/order-service"
+import { motion } from "framer-motion"
 
 interface Order {
     _id: string
@@ -109,7 +110,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                     ) : (
                         <div className="space-y-8">
                             {/* Order Header */}
-                            <div className="bg-background border border-border rounded-lg p-6">
+                            <motion.div
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.5 }}
+                                className="bg-background border border-border rounded-xl p-6 shadow-sm"
+                            >
                                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                     <div>
                                         <h1 className="font-serif text-3xl font-medium mb-2">
@@ -127,7 +133,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                         {order.status}
                                     </span>
                                 </div>
-                            </div>
+                            </motion.div>
 
                             <div className="grid md:grid-cols-2 gap-8">
                                 {/* Order Items */}
@@ -154,7 +160,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                 {/* Shipping & Summary */}
                                 <div className="space-y-6">
                                     {/* Shipping Address */}
-                                    <div className="bg-background border border-border rounded-lg p-6">
+                                    <motion.div
+                                        initial={{ opacity: 0, x: 16 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ duration: 0.5, delay: 0.2 }}
+                                        className="bg-background border border-border rounded-xl p-6 shadow-sm"
+                                    >
                                         <h3 className="text-lg font-semibold mb-4">Shipping Address</h3>
                                         <div className="space-y-2 text-sm">
                                             <p className="font-medium">{order.customerName}</p>
@@ -168,10 +179,15 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 Email: {order.email}
                                             </p>
                                         </div>
-                                    </div>
+                                    </motion.div>
 
                                     {/* Order Summary */}
-                                    <div className="bg-background border border-border rounded-lg p-6">
+                                    <motion.div
+                                        initial={{ opacity: 0, x: 16 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ duration: 0.5, delay: 0.3 }}
+                                        className="bg-background border border-border rounded-xl p-6 shadow-sm"
+                                    >
                                         <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
                                         <div className="space-y-3">
                                             <div className="flex justify-between">
@@ -191,7 +207,7 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
                                                 <span>${(order.totalAmount * 1.1).toFixed(2)}</span>
                                             </div>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 </div>
                             </div>
 

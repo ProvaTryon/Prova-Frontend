@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context"
 import { Send, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
 
 export default function ConversationDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const t = useTranslations("customerService.conversationDetail")
@@ -63,7 +64,12 @@ export default function ConversationDetailPage({ params }: { params: Promise<{ i
 
   return (
     <div className="h-screen flex flex-col">
-      <div className="p-6 border-b bg-card">
+      <motion.div
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="p-6 border-b bg-card"
+      >
         <div className="flex items-center gap-4 mb-4">
           <Link href="/customer-service/conversations">
             <Button variant="ghost" size="sm">
@@ -101,7 +107,7 @@ export default function ConversationDetailPage({ params }: { params: Promise<{ i
             </span>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {conversation.messages.map((msg) => (

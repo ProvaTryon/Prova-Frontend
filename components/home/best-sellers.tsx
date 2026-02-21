@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl"
 import Image from "next/image"
 import * as productService from "@/lib/product-service"
 import type { Product } from "@/lib/product-service"
+import { motion } from "framer-motion"
 
 export function BestSellers() {
     const t = useTranslations('home')
@@ -74,9 +75,15 @@ export function BestSellers() {
 
                 {/* 4-column editorial grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-10">
-                    {products.map((product) => (
-                        <Link
+                    {products.map((product, index) => (
+                        <motion.div
                             key={product.id}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: index * 0.05, duration: 0.4 }}
+                        >
+                        <Link
                             href={`/product/${product.id}`}
                             className="group"
                         >
@@ -111,6 +118,7 @@ export function BestSellers() {
                                 )}
                             </div>
                         </Link>
+                        </motion.div>
                     ))}
                 </div>
 

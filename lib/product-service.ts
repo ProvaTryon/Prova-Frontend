@@ -16,6 +16,7 @@ export interface Product {
     price: number
     salePrice?: number
     category: string
+    type?: string
     sizes: string[]
     colors: string[]
     image: string
@@ -67,6 +68,12 @@ const transformProduct = (backendProduct: any): Product => {
         || sanitizeImageUrl(backendProduct.image)
         || '';
 
+    // Extract merchantName from populated merchant object or fallback to merchantName field
+    let merchantName = backendProduct.merchantName || '';
+    if (!merchantName && backendProduct.merchant && typeof backendProduct.merchant === 'object') {
+        merchantName = backendProduct.merchant.name || '';
+    }
+
     return {
         id: backendProduct._id || backendProduct.id,
         name: backendProduct.name || '',
@@ -74,6 +81,7 @@ const transformProduct = (backendProduct: any): Product => {
         price: backendProduct.price || 0,
         salePrice: backendProduct.salePrice,
         category: backendProduct.category || '',
+        type: backendProduct.type || '',
         sizes: backendProduct.sizes || [],
         colors: backendProduct.colors || [],
         image: mainImage,
@@ -86,7 +94,7 @@ const transformProduct = (backendProduct: any): Product => {
         rating: backendProduct.rating,
         reviews: backendProduct.reviews,
         createdAt: backendProduct.createdAt,
-        merchantName: backendProduct.merchantName || '',
+        merchantName,
     };
 };
 

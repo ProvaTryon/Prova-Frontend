@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/auth-context"
 import { Link, useRouter } from "@/i18n/routing"
 import { Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
+import Image from "next/image"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function SignupPage() {
   const t = useTranslations("auth")
@@ -126,16 +128,53 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">
-      <div className="w-full max-w-md">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-md"
+      >
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <span className="font-serif text-3xl font-semibold">{siteName}</span>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <Image
+                src="https://res.cloudinary.com/dmjh6qjna/image/upload/v1771679326/Picture2_uyt4oe.png"
+                alt="Prova"
+                width={150}
+                height={50}
+                className="h-12 w-auto object-contain mx-auto"
+                priority
+              />
+            </motion.div>
           </Link>
-          <h1 className="font-serif text-3xl font-medium mt-6 mb-2">{t("createAccount")}</h1>
-          <p className="text-muted-foreground">{t("signUpSubtitle", { siteName })}</p>
+          <motion.h1
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="font-serif text-3xl font-medium mt-6 mb-2"
+          >
+            {t("createAccount")}
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="text-muted-foreground"
+          >
+            {t("signUpSubtitle", { siteName })}
+          </motion.p>
         </div>
 
-        <div className="bg-background border border-border rounded-lg p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="bg-background border border-border rounded-xl p-8 shadow-sm"
+        >
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -316,8 +355,15 @@ export default function SignupPage() {
             </div>
 
             {/* Merchant/Brand Fields */}
+            <AnimatePresence>
             {accountType === "brand" && (
-              <>
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden space-y-6"
+              >
                 <div className="border-t pt-6 mt-6">
                   <h3 className="font-medium mb-4">Company Information</h3>
                 </div>
@@ -366,8 +412,9 @@ export default function SignupPage() {
                     placeholder="Your national/tax ID"
                   />
                 </div>
-              </>
+              </motion.div>
             )}
+            </AnimatePresence>
 
             <div className="text-sm text-muted-foreground">
               <label className="flex items-start gap-2 cursor-pointer">
@@ -407,8 +454,8 @@ export default function SignupPage() {
               {t("signIn")}
             </Link>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }

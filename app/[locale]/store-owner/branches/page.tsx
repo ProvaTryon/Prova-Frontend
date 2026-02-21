@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import * as branchService from "@/lib/branch-service"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface Branch {
     _id: string
@@ -165,7 +166,12 @@ export default function MerchantBranchesPage() {
 
     return (
         <div>
-            <div className="flex items-center justify-between mb-8">
+            <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="flex items-center justify-between mb-8"
+            >
                 <div>
                     <h1 className="font-serif text-3xl font-semibold mb-2">{t('title')}</h1>
                     <p className="text-muted-foreground">{t('subtitle')}</p>
@@ -174,14 +180,19 @@ export default function MerchantBranchesPage() {
                     <Plus className="w-4 h-4" />
                     {t('addBranch')}
                 </Button>
-            </div>
+            </motion.div>
 
-            {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-background border border-border rounded-lg p-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4 }}
+                    whileHover={{ y: -2 }}
+                    className="bg-background border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                >
                     <p className="text-sm text-muted-foreground mb-1">{t('totalBranches')}</p>
                     <p className="text-2xl font-bold">{branches.length}</p>
-                </div>
+                </motion.div>
             </div>
 
             {/* Search */}
@@ -198,10 +209,19 @@ export default function MerchantBranchesPage() {
                 </div>
             </div>
 
-            {/* Branches Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredBranches.map((branch) => (
-                    <div key={branch._id} className="bg-background border border-border rounded-lg p-6">
+            <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <AnimatePresence mode="popLayout">
+                {filteredBranches.map((branch, index) => (
+                    <motion.div
+                        key={branch._id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ delay: index * 0.05, duration: 0.3 }}
+                        whileHover={{ y: -2 }}
+                        className="bg-background border border-border rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow"
+                    >
                         <div className="flex items-start justify-between mb-4">
                             <div className="flex items-center gap-3">
                                 <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -249,9 +269,10 @@ export default function MerchantBranchesPage() {
                                 <span>{branch.manager}</span>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 ))}
-            </div>
+                </AnimatePresence>
+            </motion.div>
 
             {filteredBranches.length === 0 && (
                 <div className="text-center py-12">

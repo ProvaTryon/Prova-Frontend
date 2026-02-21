@@ -10,6 +10,7 @@ import type { Product } from "@/lib/product-service"
 import { ProductCard } from "@/components/product/product-card"
 import { useTranslations } from "next-intl"
 import { useToast } from "@/hooks/use-toast"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface ProductDetailClientProps {
   product: any
@@ -30,6 +31,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
     images: product.images || [product.image],
     description: product.description || "",
     inStock: product.inStock !== false,
+    salePrice: product.salePrice || null,
   }
 
   const mappedRelated = relatedProducts.map((p: any) => ({
@@ -111,17 +113,33 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
         {/* Product Details */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-24">
           {/* Images */}
-          <div className="space-y-4">
-            <div className="relative aspect-[3/4] overflow-hidden bg-muted">
-              <Image
-                src={mappedProduct.images[selectedImage] || mappedProduct.image}
-                alt={mappedProduct.name}
-                fill
-                className="object-cover"
-              />
+          <motion.div
+            initial={{ opacity: 0, x: -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-4"
+          >
+            <div className="relative aspect-[3/4] overflow-hidden bg-muted rounded-lg">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={selectedImage}
+                  initial={{ opacity: 0, scale: 1.02 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0"
+                >
+                  <Image
+                    src={mappedProduct.images[selectedImage] || mappedProduct.image}
+                    alt={mappedProduct.name}
+                    fill
+                    className="object-cover"
+                  />
+                </motion.div>
+              </AnimatePresence>
             </div>
             <div className="grid grid-cols-4 gap-4">
-              {mappedProduct.images.map((img, idx) => (
+              {mappedProduct.images.map((img: string, idx: number) => (
                 <button
                   key={idx}
                   onClick={() => setSelectedImage(idx)}
@@ -139,10 +157,15 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 </button>
               ))}
             </div>
-          </div>
+          </motion.div>
 
           {/* Product Info */}
-          <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, x: 24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-6"
+          >
             <div>
               <p className="text-overline text-muted-foreground mb-2 no-flip">{mappedProduct.brand}</p>
               <h1 className="font-serif text-4xl font-medium mb-4 no-flip">{mappedProduct.name}</h1>
@@ -169,7 +192,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 {t("color")}: {selectedColor && <span className="font-normal text-muted-foreground no-flip">{selectedColor}</span>}
               </label>
               <div className="flex gap-2">
-                {mappedProduct.colors.map((color) => (
+                {mappedProduct.colors.map((color: string) => (
                   <button
                     key={color}
                     onClick={() => setSelectedColor(color)}
@@ -190,7 +213,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 {t("size")}: {selectedSize && <span className="font-normal text-muted-foreground no-flip">{selectedSize}</span>}
               </label>
               <div className="flex flex-wrap gap-2">
-                {mappedProduct.sizes.map((size) => (
+                {mappedProduct.sizes.map((size: string) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
@@ -287,19 +310,32 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                 </ul>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Related Products */}
-        {relatedProducts.length > 0 && (
-          <div>
+        {mappedRelated.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          >
             <h2 className="font-serif text-3xl font-medium mb-8">{t("youMayLike")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {mappedRelated.map((product, index) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1, duration: 0.4 }}
+                >
+                  <ProductCard product={product} />
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
       </div>
     </main>

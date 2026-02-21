@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context"
 import { Link } from "@/i18n/routing"
 import { Loader2, Package } from "lucide-react"
 import * as orderService from "@/lib/order-service"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface Order {
     _id: string
@@ -100,7 +101,12 @@ export default function OrdersPage() {
 
             <main className="flex-1">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <h1 className="font-serif text-4xl font-medium mb-2">Your Orders</h1>
+                    <motion.h1
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="font-serif text-4xl font-medium mb-2"
+                    >Your Orders</motion.h1>
                     <p className="text-muted-foreground mb-8">View and track your orders</p>
 
                     {error && (
@@ -127,11 +133,17 @@ export default function OrdersPage() {
                         </div>
                     ) : (
                         <div className="space-y-6">
-                            {orders.map((order) => (
-                                <Link
+                            {orders.map((order, index) => (
+                                <motion.div
                                     key={order._id}
+                                    initial={{ opacity: 0, y: 16 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: index * 0.05, duration: 0.4 }}
+                                    whileHover={{ y: -2 }}
+                                >
+                                <Link
                                     href={`/orders/${order._id}`}
-                                    className="block bg-background border border-border rounded-lg p-6 hover:shadow-lg transition-shadow"
+                                    className="block bg-background border border-border rounded-xl p-6 shadow-sm hover:shadow-lg transition-shadow"
                                 >
                                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                                         <div className="flex-1">
@@ -156,6 +168,7 @@ export default function OrdersPage() {
                                         </div>
                                     </div>
                                 </Link>
+                                </motion.div>
                             ))}
                         </div>
                     )}

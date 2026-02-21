@@ -133,3 +133,85 @@ export const deleteReview = async (reviewId: string) => {
         throw error;
     }
 };
+
+// ==========================================
+// ❤️ لايك / إلغاء لايك على تقييم
+// ==========================================
+export const toggleLike = async (reviewId: string, userId: string) => {
+    try {
+        const token = localStorage.getItem('authToken');
+
+        const response = await fetch(`${API_URL}/api/reviews/${reviewId}/like`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ userId }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'فشل تسجيل الإعجاب');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('❌ Error toggling like:', error);
+        throw error;
+    }
+};
+
+// ==========================================
+// 💬 إضافة رد على تقييم
+// ==========================================
+export const addReply = async (reviewId: string, userId: string, comment: string) => {
+    try {
+        const token = localStorage.getItem('authToken');
+
+        const response = await fetch(`${API_URL}/api/reviews/${reviewId}/reply`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ userId, comment }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'فشل إضافة الرد');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('❌ Error adding reply:', error);
+        throw error;
+    }
+};
+
+// ==========================================
+// 🗑️ حذف رد
+// ==========================================
+export const deleteReply = async (reviewId: string, replyId: string) => {
+    try {
+        const token = localStorage.getItem('authToken');
+
+        const response = await fetch(`${API_URL}/api/reviews/${reviewId}/reply/${replyId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'فشل حذف الرد');
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error('❌ Error deleting reply:', error);
+        throw error;
+    }
+};

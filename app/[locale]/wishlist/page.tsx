@@ -7,6 +7,7 @@ import { Link } from "@/i18n/routing";
 import { Heart, X, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function WishlistPage() {
   const t = useTranslations("wishlist");
@@ -15,31 +16,40 @@ export default function WishlistPage() {
   const { addItem } = useCart();
 
   const handleAddToCart = (product: any) => {
+    const size = product.sizes?.[0] || "M"
+    const color = product.colors?.[0] || "Default"
     addItem({
       id: product.id,
       name: product.name,
       price: product.salePrice || product.price,
       image: product.image,
-      quantity: 1,
-      size: product.sizes?.[0] || "M",
-      color: product.colors?.[0] || "Default",
-    })
+    } as any, size, color)
   }
 
   if (wishlistItems.length === 0) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-16">
-          <div className="max-w-2xl mx-auto text-center">
-            <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="max-w-2xl mx-auto text-center"
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 20 }}
+              className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6"
+            >
               <Heart className="w-12 h-12 text-muted-foreground" />
-            </div>
+            </motion.div>
             <h1 className="font-serif text-3xl font-medium mb-4">{t("empty")}</h1>
             <p className="text-muted-foreground mb-8">{t("emptySubtitle")}</p>
             <Button asChild size="lg">
               <Link href="/shop">{t("continueShopping")}</Link>
             </Button>
-          </div>
+          </motion.div>
         </div>
       </div>
     )
@@ -49,7 +59,12 @@ export default function WishlistPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 md:py-12">
         {/* Header */}
-        <div className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-8"
+        >
           <h1 className="font-serif text-3xl md:text-4xl font-medium mb-2">{t("title")}</h1>
           <p className="text-muted-foreground">
             {wishlistItems.length === 1
@@ -57,12 +72,21 @@ export default function WishlistPage() {
               : t("itemsCount", { count: wishlistItems.length })
             }
           </p>
-        </div>
+        </motion.div>
 
         {/* Wishlist Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {wishlistItems.map((product) => (
-            <div key={product.id} className="group relative bg-card rounded-lg overflow-hidden border">
+        <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <AnimatePresence mode="popLayout">
+            {wishlistItems.map((product, index) => (
+              <motion.div
+                key={product.id}
+                layout
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.35, delay: index * 0.05 }}
+                className="group relative bg-card rounded-xl overflow-hidden border shadow-sm"
+              >
               {/* Remove Button */}
               <button
                 onClick={() => removeFromWishlist(product.id)}
@@ -114,9 +138,10 @@ export default function WishlistPage() {
                   {t("addToCart")}
                 </Button>
               </div>
-            </div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </div>
   )

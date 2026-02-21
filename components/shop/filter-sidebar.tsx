@@ -17,12 +17,14 @@ interface FilterSidebarProps {
   onClose: () => void
   filters: {
     category: string
+    types: string[]
     brands: string[]
     priceRange: [number, number]
     sizes: string[]
   }
   onFilterChange: (filters: any) => void
   availableBrands?: string[]
+  availableTypes?: string[]
   categories?: { id: string; name: string }[]
 }
 
@@ -32,6 +34,12 @@ export function FilterSidebar({
   filters,
   onFilterChange,
   availableBrands = [],
+  availableTypes = [
+    "T-Shirt", "Shirt", "Pants", "Jeans", "Shorts",
+    "Jacket", "Coat", "Hoodie", "Sweater",
+    "Dress", "Skirt", "Blouse",
+    "Belt", "Shoes", "Bag", "Accessory"
+  ],
   categories = defaultCategories
 }: FilterSidebarProps) {
   const t = useTranslations('shop')
@@ -52,9 +60,19 @@ export function FilterSidebar({
     onFilterChange(newFilters)
   }
 
+  const handleTypeToggle = (type: string) => {
+    const newTypes = localFilters.types?.includes(type)
+      ? localFilters.types.filter((t) => t !== type)
+      : [...(localFilters.types || []), type]
+    const newFilters = { ...localFilters, types: newTypes }
+    setLocalFilters(newFilters)
+    onFilterChange(newFilters)
+  }
+
   const handleClearAll = () => {
     const clearedFilters = {
       category: "all",
+      types: [],
       brands: [],
       priceRange: [0, 500] as [number, number],
       sizes: [],
@@ -118,6 +136,28 @@ export function FilterSidebar({
                 <span className="text-sm group-hover:text-primary transition-colors">{category.name}</span>
               </label>
             ))}
+          </div>
+        </div>
+
+        {/* Types */}
+        <div className="mb-8">
+          <h3 className="text-[11px] font-medium tracking-[0.12em] uppercase mb-4">{t('type') || 'Type'}</h3>
+          <div className="space-y-2">
+            {availableTypes.length > 0 ? (
+              availableTypes.map((type) => (
+                <label key={type} className="flex items-center gap-3 cursor-pointer group">
+                  <input
+                    type="checkbox"
+                    checked={localFilters.types?.includes(type)}
+                    onChange={() => handleTypeToggle(type)}
+                    className="w-4 h-4 rounded text-primary focus:ring-primary"
+                  />
+                  <span className="text-sm group-hover:text-primary transition-colors">{type}</span>
+                </label>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No types available</p>
+            )}
           </div>
         </div>
 

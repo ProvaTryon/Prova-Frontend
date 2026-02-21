@@ -9,6 +9,7 @@ import { SlidersHorizontal, Search, Loader2, AlertCircle } from "lucide-react"
 import { useTranslations } from "next-intl"
 import * as productService from "@/lib/product-service"
 import type { Product } from "@/lib/product-service"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function ShopPage() {
   const t = useTranslations('shop')
@@ -20,6 +21,7 @@ export default function ShopPage() {
   const [sortBy, setSortBy] = useState("featured")
   const [filters, setFilters] = useState({
     category: "all",
+    types: [] as string[],
     brands: [] as string[],
     priceRange: [0, 5000] as [number, number],
     sizes: [] as string[],
@@ -57,6 +59,11 @@ export default function ShopPage() {
     // Category filter
     if (filters.category !== "all") {
       filtered = filtered.filter((p) => p.category === filters.category)
+    }
+
+    // Type filter
+    if (filters.types && filters.types.length > 0) {
+      filtered = filtered.filter((p) => p.type && filters.types.includes(p.type))
     }
 
     // Brand filter
@@ -111,6 +118,21 @@ export default function ShopPage() {
     return [...new Set(brands)].sort()
   }, [products])
 
+  // Default types list used as fallback when products have no type field
+  const DEFAULT_PRODUCT_TYPES = [
+    "T-Shirt", "Shirt", "Pants", "Jeans", "Shorts",
+    "Jacket", "Coat", "Hoodie", "Sweater",
+    "Dress", "Skirt", "Blouse",
+    "Belt", "Shoes", "Bag", "Accessory"
+  ]
+
+  // Derive unique types from loaded products, fall back to default list
+  const availableTypes = useMemo(() => {
+    const types = products.map(p => p.type).filter(Boolean) as string[]
+    const uniqueTypes = [...new Set(types)].sort()
+    return uniqueTypes.length > 0 ? uniqueTypes : DEFAULT_PRODUCT_TYPES
+  }, [products])
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -118,10 +140,15 @@ export default function ShopPage() {
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="mb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            className="mb-10"
+          >
             <h1 className="text-display mb-3">{t('title')}</h1>
             <p className="text-body-lg text-muted-foreground">{t('subtitle')}</p>
-          </div>
+          </motion.div>
 
           {/* Search and Controls */}
           <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -162,11 +189,18 @@ export default function ShopPage() {
           </div>
 
           {/* Error State */}
-          {error && (
-            <div className="mb-8 p-4 bg-destructive/10 text-destructive">
-              {error}
-            </div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="mb-8 p-4 bg-destructive/10 text-destructive rounded-lg"
+              >
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Loading State */}
           {loading ? (
@@ -182,6 +216,7 @@ export default function ShopPage() {
                 filters={filters}
                 onFilterChange={setFilters}
                 availableBrands={availableBrands}
+                availableTypes={availableTypes}
               />
 
               {/* Products Grid */}
@@ -191,9 +226,21 @@ export default function ShopPage() {
                 </div>
 
                 {filteredProducts.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredProducts.map((product: any) => (
-                      <ProductCard key={product._id || product.id} product={{
+                  <motion.div
+                    layout
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
+                    <AnimatePresence mode="popLayout">
+                      {filteredProducts.map((product: any, index: number) => (
+                        <motion.div
+                          key={product._id || product.id}
+                          layout
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.4, delay: index * 0.03, ease: [0.16, 1, 0.3, 1] }}
+                        >
+                          <ProductCard product={{
                         id: product._id || product.id || "",
                         name: product.name,
                         brand: product.brand || "Fashion Brand",
@@ -205,9 +252,11 @@ export default function ShopPage() {
                         images: product.images || [product.image],
                         description: product.description || "",
                         inStock: product.inStock !== false,
-                      }} />
-                    ))}
-                  </div>
+                        }} />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </motion.div>
                 ) : (
                   <div className="text-center py-16">
                     <p className="text-muted-foreground mb-4">{t('noResults')}</p>
@@ -215,6 +264,7 @@ export default function ShopPage() {
                       onClick={() =>
                         setFilters({
                           category: "all",
+                          types: [],
                           brands: [],
                           priceRange: [0, 5000],
                           sizes: [],

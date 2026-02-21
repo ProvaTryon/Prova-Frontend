@@ -9,6 +9,7 @@ import { useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import * as orderService from "@/lib/order-service"
 import type { CreatedOrder } from "@/lib/order-service"
+import { motion } from "framer-motion"
 
 export default function OrderSuccessPage() {
     const t = useTranslations("orderSuccess")
@@ -33,11 +34,21 @@ export default function OrderSuccessPage() {
             <Navbar />
 
             <main className="flex-1 flex items-center justify-center">
-                <div className="max-w-lg mx-auto text-center px-4 py-16">
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="max-w-lg mx-auto text-center px-4 py-16"
+                >
                     {/* Success Icon */}
-                    <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.2 }}
+                        className="w-20 h-20 mx-auto mb-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center"
+                    >
                         <CheckCircle2 className="w-10 h-10 text-green-600 dark:text-green-400" />
-                    </div>
+                    </motion.div>
 
                     <h1 className="font-serif text-3xl md:text-4xl font-medium mb-3">
                         {t("title")}
@@ -111,7 +122,7 @@ export default function OrderSuccessPage() {
                             {t("viewOrders")}
                         </Link>
                     </div>
-                </div>
+                </motion.div>
             </main>
 
             <Footer />

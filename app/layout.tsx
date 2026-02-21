@@ -27,7 +27,7 @@ const notoArabic = Noto_Sans_Arabic({
 })
 
 export const metadata: Metadata = {
-  title: "Pròva (بروفه) - AI-Powered Fashion Platform",
+  title: "Prova",
   description:
     "Experience the future of fashion with virtual try-on, smart recommendations, and personalized shopping.",
   generator: 'v0.app'

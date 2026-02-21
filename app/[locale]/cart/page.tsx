@@ -7,6 +7,7 @@ import Image from "next/image"
 import { Minus, Plus, Trash2, ShoppingBag } from "lucide-react"
 import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/routing"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function CartPage() {
   const t = useTranslations('cart')
@@ -17,17 +18,30 @@ export default function CartPage() {
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <main className="flex-1 flex items-center justify-center">
-          <div className="text-center py-16 px-4">
-            <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className="text-center py-16 px-4"
+          >
+            <motion.div
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <ShoppingBag className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            </motion.div>
             <h2 className="font-serif text-3xl font-medium mb-4">{t('empty')}</h2>
             <p className="text-muted-foreground mb-8">{t('emptySubtitle')}</p>
-            <Link
-              href="/shop"
-              className="inline-block px-8 py-4 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all"
-            >
-              {t('continueShopping')}
-            </Link>
-          </div>
+            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <Link
+                href="/shop"
+                className="inline-block px-8 py-4 bg-primary text-primary-foreground rounded-full font-medium hover:bg-primary/90 transition-all"
+              >
+                {t('continueShopping')}
+              </Link>
+            </motion.div>
+          </motion.div>
         </main>
         <Footer />
       </div>
@@ -40,7 +54,12 @@ export default function CartPage() {
 
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex items-center justify-between mb-8"
+          >
             <h1 className="font-serif text-4xl font-medium">{t('title')}</h1>
             <button
               onClick={clearCart}
@@ -48,15 +67,21 @@ export default function CartPage() {
             >
               {t('clearAll')}
             </button>
-          </div>
+          </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
-              {items.map((item) => (
-                <div
-                  key={`${item.id}-${item.selectedSize}-${item.selectedColor}`}
-                  className="flex gap-4 p-4 bg-card rounded-lg border border-border"
+              <AnimatePresence mode="popLayout">
+                {items.map((item, index) => (
+                  <motion.div
+                    key={`${item.id}-${item.selectedSize}-${item.selectedColor}`}
+                    layout
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 20, scale: 0.95 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    className="flex gap-4 p-4 bg-card rounded-xl border border-border shadow-sm"
                 >
                   <div className="relative w-24 h-32 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                     <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
@@ -115,13 +140,19 @@ export default function CartPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               ))}
+              </AnimatePresence>
             </div>
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="sticky top-24 p-6 bg-card rounded-lg border border-border space-y-4">
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="sticky top-24 p-6 bg-card rounded-xl border border-border shadow-sm space-y-4"
+              >
                 <h2 className="font-serif text-2xl font-medium">{t('orderSummary')}</h2>
 
                 <div className="space-y-3 py-4 border-y border-border">
@@ -167,9 +198,8 @@ export default function CartPage() {
                     </p>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            </div>          </div>
         </div>
       </main>
 

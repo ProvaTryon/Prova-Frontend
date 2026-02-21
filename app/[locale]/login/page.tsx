@@ -8,6 +8,8 @@ import { useSearchParams } from "next/navigation"
 import { Link, useRouter } from "@/i18n/routing"
 import { Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
+import Image from "next/image"
+import { motion } from "framer-motion"
 
 export default function LoginPage() {
   const t = useTranslations("auth")
@@ -79,16 +81,53 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
-      <div className="w-full max-w-md">
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-md"
+      >
         <div className="text-center mb-8">
           <Link href="/" className="inline-block">
-            <span className="font-serif text-3xl font-semibold">{siteName}</span>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 }}
+            >
+              <Image
+                src="https://res.cloudinary.com/dmjh6qjna/image/upload/v1771679326/Picture2_uyt4oe.png"
+                alt="Prova"
+                width={150}
+                height={50}
+                className="h-12 w-auto object-contain mx-auto"
+                priority
+              />
+            </motion.div>
           </Link>
-          <h1 className="font-serif text-3xl font-medium mt-6 mb-2">{t("welcomeBack")}</h1>
-          <p className="text-muted-foreground">{t("signInSubtitle")}</p>
+          <motion.h1
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="font-serif text-3xl font-medium mt-6 mb-2"
+          >
+            {t("welcomeBack")}
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="text-muted-foreground"
+          >
+            {t("signInSubtitle")}
+          </motion.p>
         </div>
 
-        <div className="bg-background border border-border rounded-lg p-8">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="bg-background border border-border rounded-xl p-8 shadow-sm"
+        >
           <button
             type="button"
             onClick={handleGoogleSignIn}
@@ -217,7 +256,7 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+          <div className="mt-6 p-4 bg-muted/50 rounded-xl">
             <p className="text-xs font-medium mb-2">{t("testAccounts")}</p>
             <div className="text-xs space-y-1 text-muted-foreground no-flip">
               <p>Admin: admin@prova.com / admin123</p>
@@ -225,8 +264,8 @@ export default function LoginPage() {
               <p>Customer Service: cs@prova.com / cs123</p>
             </div>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
   )
 }

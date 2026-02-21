@@ -11,6 +11,7 @@ import { processTryOn, dataURLToFile, urlToFile, revokeObjectURL } from "@/lib/v
 import Image from "next/image"
 import { Upload, X, Loader2, Download, Share2, ShoppingBag, Info, AlertCircle } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function VirtualTryOnPage() {
   const t = useTranslations("virtualTryOn")
@@ -119,12 +120,17 @@ export default function VirtualTryOnPage() {
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
+          >
             <h1 className="font-serif text-4xl sm:text-5xl font-medium mb-4">{t("title")}</h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               {t("subtitle")}
             </p>
-          </div>
+          </motion.div>
 
           {/* Guidelines */}
           <div className="mb-8 p-4 bg-muted rounded-lg">
@@ -342,7 +348,13 @@ export default function VirtualTryOnPage() {
           )}
 
           {/* How It Works */}
-          <div className="mt-24 pt-12 border-t border-border">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="mt-24 pt-12 border-t border-border"
+          >
             <h2 className="font-serif text-3xl font-medium text-center mb-12">{t("howItWorks")}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="text-center">
@@ -367,7 +379,7 @@ export default function VirtualTryOnPage() {
                 <p className="text-muted-foreground">{t("step3Desc")}</p>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </main>
 

@@ -6,6 +6,7 @@ import { mockConversations } from "@/lib/mock-data"
 import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 export default function ConversationsPage() {
   const t = useTranslations("customerService.conversations")
@@ -22,10 +23,15 @@ export default function ConversationsPage() {
 
   return (
     <div className="p-8">
-      <div className="mb-8">
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mb-8"
+      >
         <h1 className="text-3xl font-serif mb-2">{t("title")}</h1>
         <p className="text-muted-foreground">{t("subtitle")}</p>
-      </div>
+      </motion.div>
 
       <div className="flex gap-4 mb-6">
         <div className="flex-1 relative">
@@ -70,7 +76,12 @@ export default function ConversationsPage() {
         </div>
       </div>
 
-      <div className="bg-card rounded-lg border overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="bg-card rounded-xl border shadow-sm overflow-hidden"
+      >
         <table className="w-full">
           <thead className="bg-muted">
             <tr>
@@ -128,7 +139,7 @@ export default function ConversationsPage() {
             ))}
           </tbody>
         </table>
-      </div>
+      </motion.div>
 
       {filteredConversations.length === 0 && (
         <div className="text-center py-12">
