@@ -103,17 +103,18 @@ export default function StoreOwnerProducts() {
         salePrice: productData.salePrice || undefined,
         stock: productData.stock || 10,
         category: productData.category,
+        type: (productData as any).type || undefined,
         images: productData.images || [productData.image],
         imagePublicId: (productData as any).imagePublicId || '',
         imagePublicIds: (productData as any).imagePublicIds || [],
         sizes: productData.sizes || [],
         colors: productData.colors || [],
-        brand: productData.brand,
+        brand: productData.brand || 'Unbranded',
         gender: (productData as any).gender || 'unisex',
-        material: (productData as any).material || '',
+        material: (productData as any).material || 'Cotton',
         tags: (productData as any).tags || [],
         merchant: String(user.id),
-        merchantName: user?.name || productData.merchantName || '',
+        merchantName: user?.name || productData.merchantName || undefined,
       }
 
       if ('id' in productData && productData.id) {

@@ -32,6 +32,9 @@ export interface Product {
     reviews?: number
     createdAt?: string
     merchantName?: string
+    material?: string
+    tags?: string[]
+    gender?: string
 }
 
 // ==========================================
@@ -95,6 +98,9 @@ const transformProduct = (backendProduct: any): Product => {
         reviews: backendProduct.reviews,
         createdAt: backendProduct.createdAt,
         merchantName,
+        material: backendProduct.material || '',
+        tags: backendProduct.tags || [],
+        gender: backendProduct.gender || '',
     };
 };
 

@@ -32,6 +32,9 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
     description: product.description || "",
     inStock: product.inStock !== false,
     salePrice: product.salePrice || null,
+    material: product.material || '',
+    tags: product.tags || [],
+    gender: product.gender || '',
   }
 
   const mappedRelated = relatedProducts.map((p: any) => ({
@@ -301,13 +304,56 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
             {/* Product Details */}
             <div className="pt-6 border-t border-border space-y-4">
               <div>
-                <h3 className="font-semibold mb-2">{t("productDetails")}</h3>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• {t("premiumMaterials")}</li>
-                  <li>• {t("craftedConstruction")}</li>
-                  <li>• {t("availableMultiple")}</li>
-                  <li>• {t("freeShipping")}</li>
-                </ul>
+                <h3 className="font-semibold mb-3">{t("productDetails")}</h3>
+                <div className="space-y-3">
+                  {/* Material */}
+                  {mappedProduct.material && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium min-w-[80px]">{t("material")}:</span>
+                      <span className="text-sm text-muted-foreground no-flip">{mappedProduct.material}</span>
+                    </div>
+                  )}
+
+                  {/* Gender */}
+                  {mappedProduct.gender && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium min-w-[80px]">{t("gender")}:</span>
+                      <span className="text-sm text-muted-foreground no-flip capitalize">{mappedProduct.gender}</span>
+                    </div>
+                  )}
+
+                  {/* Category */}
+                  {mappedProduct.category && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium min-w-[80px]">{t("category")}:</span>
+                      <span className="text-sm text-muted-foreground no-flip">{mappedProduct.category}</span>
+                    </div>
+                  )}
+
+                  {/* Tags */}
+                  {mappedProduct.tags && mappedProduct.tags.length > 0 && (
+                    <div className="flex items-start gap-2">
+                      <span className="text-sm font-medium min-w-[80px]">{t("tags")}:</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {mappedProduct.tags.map((tag: string) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground no-flip"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* General info */}
+                  <ul className="text-sm text-muted-foreground space-y-1 pt-2 border-t border-border">
+                    <li>• {t("craftedConstruction")}</li>
+                    <li>• {t("availableMultiple")}</li>
+                    <li>• {t("freeShipping")}</li>
+                  </ul>
+                </div>
               </div>
             </div>
           </motion.div>

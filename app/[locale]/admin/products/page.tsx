@@ -57,15 +57,15 @@ export default function ProductsManagement() {
         price: product.price,
         stock: product.inStock ? 100 : 0, // Backend uses stock, not inStock
         category: product.category,
-        type: (product as any).type || '',
-        brand: product.brand,
+        type: (product as any).type || undefined,
+        brand: product.brand || 'Unbranded',
         sizes: product.sizes,
         colors: product.colors,
         images: product.images?.length ? product.images : [product.image],
         gender: product.gender || 'unisex',
         material: product.material || 'Cotton',
         tags: product.tags || ['fashion'],
-        merchantName: product.merchantName || '',
+        merchantName: product.merchantName || undefined,
       }
       await productService.createProduct(backendData)
       await fetchProducts() // Refresh the list from backend
@@ -88,15 +88,16 @@ export default function ProductsManagement() {
         price: product.price,
         stock: product.inStock ? (product.stock || 100) : 0,
         category: product.category,
-        type: (product as any).type || '',
-        brand: product.brand,
+        type: (product as any).type || undefined,
+        brand: product.brand || undefined,
         sizes: product.sizes,
         colors: product.colors,
         images: product.images?.length ? product.images : [product.image],
-        gender: product.gender,
-        material: product.material,
-        tags: product.tags,
-        merchantName: product.merchantName || '',
+        gender: product.gender || undefined,
+        material: product.material || undefined,
+        tags: product.tags?.length ? product.tags : undefined,
+        merchantName: product.merchantName || undefined,
+        salePrice: product.salePrice || undefined,
       }
       await productService.updateProduct(product.id, backendData)
       await fetchProducts() // Refresh the list from backend

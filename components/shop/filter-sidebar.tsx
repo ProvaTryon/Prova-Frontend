@@ -74,7 +74,7 @@ export function FilterSidebar({
       category: "all",
       types: [],
       brands: [],
-      priceRange: [0, 500] as [number, number],
+      priceRange: [0, 5000] as [number, number],
       sizes: [],
     }
     setLocalFilters(clearedFilters)
