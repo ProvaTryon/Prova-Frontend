@@ -64,12 +64,7 @@ export const register = async (userData: {
       throw new Error(errorMessage);
     }
 
-    // حفظ Token في localStorage
-    // Note: Backend returns just `user` not `token` in signUp response
-    if (data.user) {
-      localStorage.setItem('user', JSON.stringify(data.user));
-    }
-
+    // Don't save user to localStorage on signup - account needs OTP verification first
     return data;
   } catch (error) {
     console.error('❌ Register Error Details:', error);
@@ -124,6 +119,68 @@ export const login = async (credentials: {
   } catch (error) {
     console.error('❌ Login Error Details:', error);
     console.error('❌ Error Message:', (error as Error).message);
+    throw error;
+  }
+};
+
+// ==========================================
+// ✅ Verify Signup OTP (Email Verification)
+// ==========================================
+export const verifySignupOTP = async (email: string, otp: string) => {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/verify-signup-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, otp }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.msg || data.message || data.error || 'OTP verification failed');
+    }
+
+    // Save tokens after successful verification
+    if (data.tokens && data.tokens.accessToken) {
+      localStorage.setItem('authToken', data.tokens.accessToken);
+      localStorage.setItem('refreshToken', data.tokens.refreshToken);
+    }
+
+    if (data.user) {
+      localStorage.setItem('user', JSON.stringify(data.user));
+    }
+
+    return data;
+  } catch (error) {
+    console.error('❌ Verify Signup OTP Error:', error);
+    throw error;
+  }
+};
+
+// ==========================================
+// 🔄 Resend Signup OTP
+// ==========================================
+export const resendSignupOTP = async (email: string) => {
+  try {
+    const response = await fetch(`${API_URL}/api/auth/resend-signup-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.msg || data.message || data.error || 'Failed to resend OTP');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('❌ Resend Signup OTP Error:', error);
     throw error;
   }
 };

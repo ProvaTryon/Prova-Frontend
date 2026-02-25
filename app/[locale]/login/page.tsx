@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import Image from "next/image"
 import { motion } from "framer-motion"
+import OTPVerification from "@/components/auth/otp-verification"
 
 export default function LoginPage() {
   const t = useTranslations("auth")
@@ -20,7 +21,11 @@ export default function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [error, setError] = useState("")
 
-  const { login, continueAsGuest, signInWithGoogle, user } = useAuth()
+  // OTP verification state (for unverified accounts)
+  const [showOtp, setShowOtp] = useState(false)
+  const [isVerifying, setIsVerifying] = useState(false)
+
+  const { login, continueAsGuest, signInWithGoogle, verifySignupOTP, resendSignupOTP, user } = useAuth()
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -54,7 +59,14 @@ export default function LoginPage() {
     } catch (err: any) {
       console.error('❌ Login page error:', err)
       const errorMessage = err?.message || t("invalidCredentials")
-      setError(errorMessage)
+
+      // If email not verified, show OTP step
+      if (errorMessage === 'EMAIL_NOT_VERIFIED' || errorMessage.includes('EMAIL_NOT_VERIFIED')) {
+        setShowOtp(true)
+        setError("")
+      } else {
+        setError(errorMessage)
+      }
     } finally {
       setIsLoading(false)
     }
@@ -77,6 +89,43 @@ export default function LoginPage() {
   const handleGuestCheckout = () => {
     continueAsGuest()
     router.push("/shop")
+  }
+
+  const handleVerifyFromLogin = async (otpCode: string) => {
+    setIsVerifying(true)
+    try {
+      const userData = await verifySignupOTP(email, otpCode)
+      const redirectPath = getRedirectPath(userData.role)
+      router.push(redirectPath)
+    } catch (err: any) {
+      setError(err?.message || "Invalid OTP. Please try again.")
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleResendFromLogin = async () => {
+    await resendSignupOTP(email)
+  }
+
+  // ==========================================
+  // OTP Verification View (for unverified accounts)
+  // ==========================================
+  if (showOtp) {
+    return (
+      <OTPVerification
+        email={email}
+        title={t("verifyEmail")}
+        subtitle={t("emailNotVerifiedMsg")}
+        onVerify={handleVerifyFromLogin}
+        onResend={handleResendFromLogin}
+        onBack={() => { setShowOtp(false); setError("") }}
+        backLabel={t("backToLogin")}
+        error={error}
+        setError={setError}
+        isVerifying={isVerifying}
+      />
+    )
   }
 
   return (
@@ -254,15 +303,6 @@ export default function LoginPage() {
             <Link href="/signup" className="text-primary hover:underline font-medium">
               {t("signUp")}
             </Link>
-          </div>
-
-          <div className="mt-6 p-4 bg-muted/50 rounded-xl">
-            <p className="text-xs font-medium mb-2">{t("testAccounts")}</p>
-            <div className="text-xs space-y-1 text-muted-foreground no-flip">
-              <p>Admin: admin@prova.com / admin123</p>
-              <p>Store Owner: store@prova.com / store123</p>
-              <p>Customer Service: cs@prova.com / cs123</p>
-            </div>
           </div>
         </motion.div>
       </motion.div>

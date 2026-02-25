@@ -27,7 +27,9 @@ interface AuthContextType {
     address?: string;
     birth_date?: string;
     confirmPassword?: string;
-  }) => Promise<void>
+  }) => Promise<{ email: string }>
+  verifySignupOTP: (email: string, otp: string) => Promise<User>
+  resendSignupOTP: (email: string) => Promise<void>
   logout: () => void
   isAuthenticated: boolean
   isAdmin: boolean
@@ -42,6 +44,21 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+/**
+ * Map backend role names to frontend role names.
+ * Backend uses "cs" and "user", frontend uses "customer_service" and "customer".
+ */
+function mapRole(backendRole: string): User["role"] {
+  switch (backendRole) {
+    case "cs":
+      return "customer_service"
+    case "user":
+      return "customer"
+    default:
+      return backendRole as User["role"]
+  }
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -64,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: userData.email,
               phone: userData.phone,
               address: userData.address,
-              role: userData.role,
+              role: mapRole(userData.role),
               accountType: userData.role === 'merchant' ? 'brand' : 'customer',
               storeId: userData.storeId,
             })
@@ -98,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: response.user.email,
         phone: response.user.phone,
         address: response.user.address,
-        role: response.user.role,
+        role: mapRole(response.user.role),
         accountType: response.user.role === 'merchant' ? 'brand' : 'customer',
         storeId: response.user.storeId,
       }
@@ -129,11 +146,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       birth_date?: string;
       confirmPassword?: string;
     }
-  ) => {
+  ): Promise<{ email: string }> => {
     try {
       setLoading(true)
 
-      const response = await authService.register({
+      await authService.register({
         name,
         email,
         password,
@@ -147,20 +164,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         nationalId: additionalData?.nationalId,
       })
 
-      setUser({
+      // Don't set user yet - need OTP verification first
+      return { email }
+    } catch (error: any) {
+      throw new Error(error.message || 'فشل التسجيل')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // ==========================================
+  // ✅ التحقق من OTP التسجيل
+  // ==========================================
+  const verifySignupOTP = async (email: string, otp: string): Promise<User> => {
+    try {
+      setLoading(true)
+
+      const response = await authService.verifySignupOTP(email, otp)
+
+      const userData: User = {
         id: String(response.user.id || response.user._id || ''),
         name: response.user.name,
         email: response.user.email,
         phone: response.user.phone,
         address: response.user.address,
-        role: response.user.role,
-        accountType: role === 'merchant' ? 'brand' : 'customer',
+        role: mapRole(response.user.role),
+        accountType: response.user.role === 'merchant' ? 'brand' : 'customer',
         storeId: response.user.storeId,
-      })
+      }
+
+      setUser(userData)
+      return userData
     } catch (error: any) {
-      throw new Error(error.message || 'فشل التسجيل')
+      throw new Error(error.message || 'فشل التحقق من الرمز')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // ==========================================
+  // 🔄 إعادة إرسال OTP التسجيل
+  // ==========================================
+  const resendSignupOTP = async (email: string): Promise<void> => {
+    try {
+      await authService.resendSignupOTP(email)
+    } catch (error: any) {
+      throw new Error(error.message || 'فشل إعادة إرسال الرمز')
     }
   }
 
@@ -251,6 +300,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         login,
         signup,
+        verifySignupOTP,
+        resendSignupOTP,
         logout,
         isAuthenticated,
         isAdmin,

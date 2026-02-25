@@ -9,6 +9,9 @@ import { Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
+import OTPVerification from "@/components/auth/otp-verification"
+
+type Step = "form" | "otp"
 
 export default function SignupPage() {
   const t = useTranslations("auth")
@@ -25,12 +28,16 @@ export default function SignupPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [error, setError] = useState("")
 
+  // OTP state
+  const [step, setStep] = useState<Step>("form")
+  const [isVerifying, setIsVerifying] = useState(false)
+
   // Merchant fields
   const [companyName, setCompanyName] = useState("")
   const [companyId, setCompanyId] = useState("")
   const [nationalId, setNationalId] = useState("")
 
-  const { signup, signInWithGoogle } = useAuth()
+  const { signup, signInWithGoogle, verifySignupOTP, resendSignupOTP } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,7 +74,6 @@ export default function SignupPage() {
       return
     }
 
-    // Check age (must be 13+)
     const birthDateObj = new Date(birthDate)
     const today = new Date()
     const age = today.getFullYear() - birthDateObj.getFullYear()
@@ -79,7 +85,6 @@ export default function SignupPage() {
       return
     }
 
-    // Validate merchant fields if brand account
     if (accountType === "brand") {
       if (!companyName || !companyId || !nationalId) {
         setError("Please fill in all company information")
@@ -90,10 +95,8 @@ export default function SignupPage() {
     setIsLoading(true)
 
     try {
-      // Determine role based on account type
       const role = accountType === "brand" ? "merchant" : "user"
 
-      // Send data matching backend requirements
       await signup(name, email, password, role, {
         companyName: accountType === "brand" ? companyName : undefined,
         companyId: accountType === "brand" ? companyId : undefined,
@@ -103,13 +106,32 @@ export default function SignupPage() {
         birth_date: birthDate,
         confirmPassword,
       })
-      router.push("/")
+
+      // Go to OTP verification step instead of redirecting to home
+      setStep("otp")
     } catch (err) {
       console.error("Signup error:", err)
       setError((err as Error).message || t("signupFailed"))
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleVerifyOTP = async (otpCode: string) => {
+    setIsVerifying(true)
+    try {
+      const userData = await verifySignupOTP(email, otpCode)
+      const redirectPath = userData.role === "merchant" ? "/store-owner" : "/"
+      router.push(redirectPath)
+    } catch (err) {
+      setError((err as Error).message || "Invalid OTP. Please try again.")
+    } finally {
+      setIsVerifying(false)
+    }
+  }
+
+  const handleResendOTP = async () => {
+    await resendSignupOTP(email)
   }
 
   const handleGoogleSignIn = async () => {
@@ -126,6 +148,29 @@ export default function SignupPage() {
     }
   }
 
+  // ==========================================
+  // OTP Verification Step
+  // ==========================================
+  if (step === "otp") {
+    return (
+      <OTPVerification
+        email={email}
+        title={t("verifyEmail")}
+        subtitle={t("verifyEmailSubtitle") || "Please verify your email to complete registration"}
+        onVerify={handleVerifyOTP}
+        onResend={handleResendOTP}
+        onBack={() => { setStep("form"); setError("") }}
+        backLabel={t("backToSignup")}
+        error={error}
+        setError={setError}
+        isVerifying={isVerifying}
+      />
+    )
+  }
+
+  // ==========================================
+  // Signup Form Step
+  // ==========================================
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4 py-12">
       <motion.div
@@ -281,7 +326,7 @@ export default function SignupPage() {
 
             <div>
               <label htmlFor="phone" className="block text-sm font-medium mb-2">
-                Phone Number
+                {t("phoneNumber")}
               </label>
               <input
                 id="phone"
@@ -296,7 +341,7 @@ export default function SignupPage() {
 
             <div>
               <label htmlFor="address" className="block text-sm font-medium mb-2">
-                Address
+                {t("address")}
               </label>
               <input
                 id="address"
@@ -305,13 +350,13 @@ export default function SignupPage() {
                 onChange={(e) => setAddress(e.target.value)}
                 required
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
-                placeholder="Your street address"
+                placeholder={t("addressPlaceholder")}
               />
             </div>
 
             <div>
               <label htmlFor="birthDate" className="block text-sm font-medium mb-2">
-                Birth Date
+                {t("birthDate")}
               </label>
               <input
                 id="birthDate"
@@ -321,7 +366,7 @@ export default function SignupPage() {
                 required
                 className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
               />
-              <p className="text-xs text-muted-foreground mt-1">You must be at least 13 years old</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("ageRequirement")}</p>
             </div>
 
             <div>
@@ -354,7 +399,6 @@ export default function SignupPage() {
               />
             </div>
 
-            {/* Merchant/Brand Fields */}
             <AnimatePresence>
             {accountType === "brand" && (
               <motion.div
@@ -365,12 +409,12 @@ export default function SignupPage() {
                 className="overflow-hidden space-y-6"
               >
                 <div className="border-t pt-6 mt-6">
-                  <h3 className="font-medium mb-4">Company Information</h3>
+                  <h3 className="font-medium mb-4">{t("companyInfo")}</h3>
                 </div>
 
                 <div>
                   <label htmlFor="companyName" className="block text-sm font-medium mb-2">
-                    Company Name
+                    {t("companyName")}
                   </label>
                   <input
                     id="companyName"
@@ -379,13 +423,13 @@ export default function SignupPage() {
                     onChange={(e) => setCompanyName(e.target.value)}
                     required={accountType === "brand"}
                     className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
-                    placeholder="Your company name"
+                    placeholder={t("companyNamePlaceholder")}
                   />
                 </div>
 
                 <div>
                   <label htmlFor="companyId" className="block text-sm font-medium mb-2">
-                    Company ID / Registration Number
+                    {t("companyId")}
                   </label>
                   <input
                     id="companyId"
@@ -394,13 +438,13 @@ export default function SignupPage() {
                     onChange={(e) => setCompanyId(e.target.value)}
                     required={accountType === "brand"}
                     className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
-                    placeholder="Your company registration number"
+                    placeholder={t("companyIdPlaceholder")}
                   />
                 </div>
 
                 <div>
                   <label htmlFor="nationalId" className="block text-sm font-medium mb-2">
-                    National ID / Tax ID
+                    {t("nationalId")}
                   </label>
                   <input
                     id="nationalId"
@@ -409,7 +453,7 @@ export default function SignupPage() {
                     onChange={(e) => setNationalId(e.target.value)}
                     required={accountType === "brand"}
                     className="w-full px-4 py-3 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary no-flip"
-                    placeholder="Your national/tax ID"
+                    placeholder={t("nationalIdPlaceholder")}
                   />
                 </div>
               </motion.div>

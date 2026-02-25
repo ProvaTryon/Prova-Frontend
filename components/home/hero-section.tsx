@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react"
 import { Link } from "@/i18n/routing"
 import { useTranslations } from "next-intl"
 import Image from "next/image"
+import { TextGenerateEffect } from "@/components/ui/text-generate-effect"
 
 export function HeroSection() {
   const t = useTranslations('home')
@@ -32,14 +33,11 @@ export function HeroSection() {
         >
           {t('hero.overline')}
         </motion.p>
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.4, ease: [0.16, 1, 0.3, 1] }}
+        <TextGenerateEffect
+          words={t('hero.headline')}
           className="font-serif text-[clamp(3rem,8vw,7rem)] font-light leading-[0.95] tracking-[-0.03em] max-w-4xl mb-6"
-        >
-          {t('hero.headline')}
-        </motion.h1>
+          duration={1.5}
+        />
         {/* Accent underline */}
         <motion.div
           initial={{ scaleX: 0 }}
