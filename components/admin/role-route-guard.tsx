@@ -35,7 +35,7 @@ export function RoleRouteGuard({ children, allowedRoles, redirectTo }: RoleRoute
     if (!loading) {
       if (!isAuthenticated) {
         const currentPath = window.location.pathname
-        router.push(`/login?redirect=${currentPath}`)
+        router.push(`/auth?redirect=${currentPath}`)
       } else if (user && !allowedRoles.includes(user.role)) {
         // Redirect to their appropriate dashboard instead of generic redirect
         const properRedirect = redirectTo || getRedirectForRole(user.role)

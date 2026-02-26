@@ -85,7 +85,7 @@ export function TryOnSection() {
       {/* Subtle texture overlay */}
       <div className="absolute inset-0 opacity-5">
         <Image
-          src="/fashion-model-wearing-elegant-clothing-outdoor-lif.jpg"
+          src="https://res.cloudinary.com/dmjh6qjna/image/upload/v1772148303/pexels-lum3n-44775-322207_fwt4dw.jpg"
           alt=""
           fill
           className="object-cover blur-2xl"

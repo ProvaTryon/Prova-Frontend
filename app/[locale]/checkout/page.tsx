@@ -55,7 +55,7 @@ export default function CheckoutPage() {
                         <h2 className="font-serif text-3xl font-medium mb-4">{t("signInRequired")}</h2>
                         <p className="text-muted-foreground mb-8">{t("signInDescription")}</p>
                         <Link
-                            href="/login"
+                            href="/auth"
                             className="inline-block px-8 py-3 bg-foreground text-background font-medium hover:bg-foreground/90 transition-all"
                         >
                             {t("signIn")}

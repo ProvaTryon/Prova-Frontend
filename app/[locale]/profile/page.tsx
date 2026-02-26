@@ -70,7 +70,7 @@ export default function ProfilePage() {
   // ── Fetch profile from backend on mount ──
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push("/login")
+      router.push("/auth")
       return
     }
 

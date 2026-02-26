@@ -197,7 +197,7 @@ export default function ForgotPasswordPage() {
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">{tForgot("rememberPassword")} </span>
-              <Link href="/login" className="text-primary hover:underline font-medium">
+              <Link href="/auth" className="text-primary hover:underline font-medium">
                 {t("signIn")}
               </Link>
             </div>
@@ -321,7 +321,7 @@ export default function ForgotPasswordPage() {
 
             <div className="mt-6 text-center text-sm">
               <span className="text-muted-foreground">{tForgot("rememberPassword")} </span>
-              <Link href="/login" className="text-primary hover:underline font-medium">
+              <Link href="/auth" className="text-primary hover:underline font-medium">
                 {t("signIn")}
               </Link>
             </div>
@@ -378,7 +378,7 @@ export default function ForgotPasswordPage() {
           </p>
 
           <button
-            onClick={() => router.push("/login")}
+            onClick={() => router.push("/auth")}
             className="w-full py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all"
           >
             {t("signIn")}

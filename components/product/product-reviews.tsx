@@ -628,7 +628,7 @@ export function ProductReviews({ productId }: ProductReviewsProps) {
                             )
                         ) : (
                             <div className="text-center text-sm text-muted-foreground">
-                                <a href="/login" className="text-foreground font-medium hover:underline">
+                                <a href="/auth" className="text-foreground font-medium hover:underline">
                                     {t("signInToReview")}
                                 </a>
                             </div>

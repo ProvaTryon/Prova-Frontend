@@ -13,7 +13,7 @@ export function HeroSection() {
   return (
     <section className="relative h-screen overflow-hidden">
       <Image
-        src="/fashion-model-wearing-elegant-clothing-outdoor-lif.jpg"
+        src="https://res.cloudinary.com/dmjh6qjna/image/upload/v1772148303/pexels-lum3n-44775-322207_fwt4dw.jpg"
         alt="Hero"
         fill
         priority

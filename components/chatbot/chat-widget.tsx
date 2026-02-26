@@ -10,6 +10,7 @@ import { productService, type Product } from "@/lib/product-service"
 import * as supportService from "@/lib/support-service"
 import type { SupportTicket, SupportMessage } from "@/lib/support-service"
 import { useAuth } from "@/lib/auth-context"
+import { usePathname } from "next/navigation"
 
 // ==========================================
 // Types
@@ -37,12 +38,19 @@ const quickActions = [
 export function ChatWidget() {
   const t = useTranslations("chatWidget")
   const { user } = useAuth()
+  const pathname = usePathname()
+
+  // Hide chat widget on auth, login, and signup pages
+  const isAuthPage = /\/(auth|login|signup)(\/?$|\/)/.test(pathname)
+  
   const [isOpen, setIsOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<Tab>("ai")
   const [hasUnread, setHasUnread] = useState(false)
 
   // CS and admin should not use the support tab (they ARE support)
   const isStaff = user?.role === "customer_service" || user?.role === "admin"
+
+  if (isAuthPage) return null
 
   return (
     <>
@@ -382,7 +390,7 @@ function SupportChat({ t, setHasUnread }: { t: ReturnType<typeof useTranslations
         <h3 className="font-medium text-lg mb-2">{t("loginRequired")}</h3>
         <p className="text-sm text-muted-foreground mb-4">{t("loginRequiredDesc")}</p>
         <Link
-          href="/login"
+          href="/auth"
           className="px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           {t("signIn")}

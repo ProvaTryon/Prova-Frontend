@@ -66,7 +66,7 @@ export default function OrdersPage() {
                         <h2 className="font-serif text-3xl font-medium mb-4">Sign In Required</h2>
                         <p className="text-muted-foreground mb-8">Please sign in to view your orders</p>
                         <Link
-                            href="/login"
+                            href="/auth"
                             className="inline-block px-8 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-all"
                         >
                             Sign In

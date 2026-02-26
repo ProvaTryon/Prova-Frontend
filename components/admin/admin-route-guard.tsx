@@ -14,7 +14,7 @@ export function AdminRouteGuard({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!loading) {
       if (!isAuthenticated) {
-        router.push("/login?redirect=/admin")
+        router.push("/auth?redirect=/admin")
       } else if (!isAdmin) {
         // Redirect non-admin users to their appropriate dashboard
         switch (user?.role) {

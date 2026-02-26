@@ -243,7 +243,7 @@ export function Navbar() {
             ) : (
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="hidden md:block">
                 <Link
-                  href="/login"
+                  href="/auth"
                   className="block px-5 py-2.5 bg-foreground text-background text-[12px] font-medium tracking-[0.08em] uppercase hover:bg-foreground/90 transition-colors rounded-lg"
                 >
                   {t('login')}
@@ -378,7 +378,7 @@ export function Navbar() {
               ) : (
                 <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.3 }}>
                   <Link
-                    href="/login"
+                    href="/auth"
                     className="block py-2.5 text-[13px] font-medium tracking-[0.04em] uppercase hover:text-muted-foreground transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
