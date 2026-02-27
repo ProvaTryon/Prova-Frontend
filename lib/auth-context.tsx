@@ -16,8 +16,16 @@ interface User {
   birth_date?: string
 }
 
+/** Returns true when the profile lacks a real phone number */
+function profileIncomplete(user: User | null): boolean {
+  if (!user || user.isGuest) return false
+  return !user.phone || user.phone.startsWith('google-') || user.phone.trim() === ''
+}
+
 interface AuthContextType {
   user: User | null
+  needsProfileCompletion: boolean
+  dismissProfileCompletion: () => void
   login: (email: string, password: string) => Promise<User>
   signup: (name: string, email: string, password: string, role: "user" | "merchant", additionalData?: {
     companyName?: string;
@@ -63,6 +71,10 @@ function mapRole(backendRole: string): User["role"] {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [profileCompletionDismissed, setProfileCompletionDismissed] = useState(false)
+
+  const needsProfileCompletion = !profileCompletionDismissed && profileIncomplete(user)
+  const dismissProfileCompletion = () => setProfileCompletionDismissed(true)
 
   // ==========================================
   // 🔄 تحميل المستخدم عند بدء التطبيق
@@ -121,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(userData)
+      setProfileCompletionDismissed(false)
       return userData
     } catch (error: any) {
       throw new Error(error.message || 'فشل تسجيل الدخول')
@@ -194,6 +207,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       setUser(userData)
+      setProfileCompletionDismissed(false)
       return userData
     } catch (error: any) {
       throw new Error(error.message || 'فشل التحقق من الرمز')
@@ -280,9 +294,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // 🔐 تسجيل الدخول بـ Google
   // ==========================================
   const signInWithGoogle = async () => {
-    // TODO: Implement Google OAuth
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    throw new Error("Google Sign-In not implemented yet")
+    try {
+      setLoading(true)
+      const googleToken = await authService.getGoogleToken()
+      const response = await authService.googleAuth(googleToken)
+
+      const userData: User = {
+        id: String(response.user.id || response.user._id || ''),
+        name: response.user.name,
+        email: response.user.email,
+        phone: response.user.phone,
+        address: response.user.address,
+        role: mapRole(response.user.role),
+        accountType: response.user.role === 'merchant' ? 'brand' : 'customer',
+        storeId: response.user.storeId,
+      }
+
+      setUser(userData)
+      // Reset dismissal flag so modal shows for new login
+      setProfileCompletionDismissed(false)
+    } catch (error: any) {
+      throw new Error(error.message || 'فشل تسجيل الدخول باستخدام Google')
+    } finally {
+      setLoading(false)
+    }
   }
 
   // ==========================================
@@ -298,6 +333,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
+        needsProfileCompletion,
+        dismissProfileCompletion,
         login,
         signup,
         verifySignupOTP,

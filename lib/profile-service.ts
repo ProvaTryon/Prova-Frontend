@@ -3,17 +3,24 @@
  * ====================================
  * Handles fetching and updating the current user's profile
  * via the dedicated /api/profile endpoint.
+ *
+ * Returns the consistent { success, message, data } envelope.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 function getAuthHeaders(): HeadersInit {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
+  const token =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('authToken')
+      : null;
   return {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
+
+// ── Types ──────────────────────────────────────────────
 
 export interface ProfileData {
   _id: string;
@@ -23,7 +30,11 @@ export interface ProfileData {
   address?: string;
   birth_date?: string;
   role: 'user' | 'merchant' | 'admin' | 'cs';
+  provider: 'local' | 'google';
+  googleId?: string;
+  profileImage?: string;
   isActive: boolean;
+  lastLogin?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -33,7 +44,37 @@ export interface UpdateProfilePayload {
   phone?: string;
   address?: string;
   birth_date?: string;
+  profileImage?: string;
 }
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+// ── Helpers ────────────────────────────────────────────
+
+async function handleResponse<T>(res: Response): Promise<T> {
+  const json = await res.json().catch(() => ({}));
+
+  if (!res.ok) {
+    if (json.errors && Array.isArray(json.errors)) {
+      const messages = json.errors
+        .map((e: { message?: string }) => e.message)
+        .filter(Boolean)
+        .join(', ');
+      throw new Error(messages || `Request failed (${res.status})`);
+    }
+    throw new Error(
+      json.msg || json.message || `Request failed (${res.status})`,
+    );
+  }
+
+  return (json as ApiResponse<T>).data ?? json;
+}
+
+// ── API calls ──────────────────────────────────────────
 
 /**
  * GET /api/profile — fetch logged-in user's profile
@@ -43,38 +84,34 @@ export async function fetchProfile(): Promise<ProfileData> {
     method: 'GET',
     headers: getAuthHeaders(),
   });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.msg || err.message || `Failed to fetch profile (${res.status})`);
-  }
-
-  return res.json();
+  return handleResponse<ProfileData>(res);
 }
 
 /**
- * PATCH /api/profile — update logged-in user's profile
+ * PUT /api/profile — update logged-in user's profile
  */
-export async function updateProfile(data: UpdateProfilePayload): Promise<ProfileData> {
+export async function updateProfile(
+  data: UpdateProfilePayload,
+): Promise<ProfileData> {
   const res = await fetch(`${API_URL}/api/profile`, {
-    method: 'PATCH',
+    method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
+  return handleResponse<ProfileData>(res);
+}
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-
-    // Extract Zod validation error details
-    if (err.errors && Array.isArray(err.errors)) {
-      const messages = err.errors.map((e: { message?: string; field?: string }) =>
-        e.message || e.field || 'Validation error',
-      );
-      throw new Error(messages.join(', '));
-    }
-
-    throw new Error(err.msg || err.message || `Failed to update profile (${res.status})`);
-  }
-
-  return res.json();
+/**
+ * PUT /api/profile/password — change password (local accounts only)
+ */
+export async function changeProfilePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/api/profile/password`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ currentPassword, newPassword }),
+  });
+  await handleResponse<null>(res);
 }

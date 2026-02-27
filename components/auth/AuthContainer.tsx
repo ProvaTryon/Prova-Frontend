@@ -115,7 +115,8 @@ export default function AuthContainer() {
                   alt="Prova"
                   width={130}
                   height={44}
-                  className="h-11 w-auto object-contain"
+                  className="object-contain"
+                  style={{ width: "130px", height: "auto" }}
                   priority
                 />
               </motion.div>

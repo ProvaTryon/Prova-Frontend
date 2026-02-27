@@ -7,6 +7,7 @@ import { CartProvider } from "@/lib/cart-context"
 import { AuthProvider } from "@/lib/auth-context"
 import { WishlistProvider } from "@/lib/wishlist-context"
 import { ChatWidget } from "@/components/chatbot/chat-widget"
+import { ProfileCompletionModal } from "@/components/auth/profile-completion-modal"
 
 export default async function LocaleLayout({
   children,
@@ -33,6 +34,7 @@ export default async function LocaleLayout({
           <CartProvider>
             {children}
             <ChatWidget />
+            <ProfileCompletionModal />
           </CartProvider>
         </WishlistProvider>
       </AuthProvider>

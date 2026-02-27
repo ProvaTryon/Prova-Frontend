@@ -30,7 +30,10 @@ export const metadata: Metadata = {
   title: "Prova",
   description:
     "Experience the future of fashion with virtual try-on, smart recommendations, and personalized shopping.",
-  generator: 'v0.app'
+  generator: 'v0.app',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export function generateStaticParams() {
