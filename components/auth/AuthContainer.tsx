@@ -73,7 +73,11 @@ export default function AuthContainer() {
         className="relative w-full lg:w-1/2 flex-1 lg:flex-none overflow-y-auto bg-background"
         style={{ perspective: "1200px" }}
       >
-        <div className="flex items-center justify-center min-h-full px-6 py-10 lg:py-0">
+        <div
+          className={`flex items-center justify-center min-h-full px-6 py-10 ${
+            isLogin ? "lg:py-0" : "lg:py-12"
+          }`}
+        >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={`form-${mode}`}
