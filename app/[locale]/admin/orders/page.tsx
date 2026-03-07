@@ -1,13 +1,28 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useTranslations } from "next-intl"
-import { Search, Eye, Package, Loader2, Trash2 } from "lucide-react"
+import { useSearchParams } from "next/navigation"
+import { Search, Eye, Package, Loader2, Trash2, Filter, X, Check } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { OrderDetailsModal } from "@/components/admin/order-details-modal"
 import * as orderService from "@/lib/order-service"
 
 // Backend Order structure
+interface OrderProduct {
+  _id: string
+  name: string
+  price: number
+  images?: string[]
+  merchantName?: string
+}
+
+interface OrderItem {
+  product: OrderProduct | string
+  quantity: number
+  price: number
+}
+
 interface Order {
   _id: string
   user: {
@@ -15,12 +30,8 @@ interface Order {
     name: string
     email: string
   } | string
-  products: Array<{
-    _id: string
-    name: string
-    price: number
-    images?: string[]
-  } | string>
+  items?: OrderItem[]
+  products?: Array<OrderProduct | string>
   total: number
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
   address: string
@@ -45,10 +56,28 @@ export default function OrdersManagement() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [highlightId, setHighlightId] = useState<string | null>(null)
+  const [storeFilter, setStoreFilter] = useState<string | null>(null)
+  const [storeDropdownOpen, setStoreDropdownOpen] = useState(false)
+  const [storeSearchQuery, setStoreSearchQuery] = useState("")
+  const highlightRef = useRef<HTMLTableRowElement>(null)
+  const storeDropdownRef = useRef<HTMLDivElement>(null)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     loadOrders()
   }, [])
+
+  useEffect(() => {
+    const id = searchParams.get('highlight')
+    if (id && orders.length > 0) {
+      setHighlightId(id)
+      setTimeout(() => {
+        highlightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 100)
+      setTimeout(() => setHighlightId(null), 1500)
+    }
+  }, [searchParams, orders])
 
   const loadOrders = async () => {
     try {
@@ -81,12 +110,69 @@ export default function OrdersManagement() {
     return ""
   }
 
-  const filteredOrders = orders.filter(
-    (order) =>
+  const getStoreNames = (order: Order): string[] => {
+    const names = new Set<string>()
+    // Handle backend "items" field (items.product.merchantName)
+    if (order.items) {
+      order.items.forEach((item) => {
+        if (typeof item.product === 'object' && item.product?.merchantName) {
+          names.add(item.product.merchantName)
+        }
+      })
+    }
+    // Handle legacy "products" field
+    if (order.products) {
+      order.products.forEach((product) => {
+        if (typeof product === 'object' && (product as any).merchantName) {
+          names.add((product as any).merchantName)
+        }
+      })
+    }
+    return Array.from(names)
+  }
+
+  const getItemCount = (order: Order): number => {
+    if (order.items && order.items.length > 0) return order.items.length
+    if (order.products && order.products.length > 0) return order.products.length
+    return 0
+  }
+
+  // Collect all unique merchant names across all orders
+  const allMerchantNames = Array.from(
+    new Set(
+      orders.flatMap((order) => getStoreNames(order))
+    )
+  ).sort()
+
+  const filteredMerchantNames = allMerchantNames.filter((name) =>
+    name.toLowerCase().includes(storeSearchQuery.toLowerCase())
+  )
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (storeDropdownRef.current && !storeDropdownRef.current.contains(e.target as Node)) {
+        setStoreDropdownOpen(false)
+      }
+    }
+    if (storeDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside)
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [storeDropdownOpen])
+
+  const filteredOrders = orders.filter((order) => {
+    const matchesSearch =
       order._id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       getUserName(order).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      getUserEmail(order).toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      getUserEmail(order).toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesStore = storeFilter
+      ? getStoreNames(order).includes(storeFilter)
+      : true
+
+    return matchesSearch && matchesStore
+  })
 
   const handleStatusChange = async (orderId: string, newStatus: Order["status"]) => {
     try {
@@ -122,13 +208,20 @@ export default function OrdersManagement() {
   }
 
   const handleViewOrder = (order: Order) => {
-    // Transform order for the modal
-    const modalOrder = {
-      id: order._id,
-      orderNumber: `ORD-${order._id.slice(-6).toUpperCase()}`,
-      customerName: getUserName(order),
-      customerEmail: getUserEmail(order),
-      items: order.products?.map((product, index) => {
+    // Transform order for the modal — handle both items (backend) and products (legacy)
+    const orderItems = order.items
+      ? order.items.map((item, index) => {
+        const product = typeof item.product === 'object' ? item.product : null
+        return {
+          productId: product?._id || String(item.product),
+          productName: product?.name || `Product ${index + 1}`,
+          quantity: item.quantity || 1,
+          price: item.price || product?.price || 0,
+          size: "N/A",
+          color: "N/A",
+        }
+      })
+      : order.products?.map((product, index) => {
         if (typeof product === 'object') {
           return {
             productId: product._id,
@@ -147,7 +240,14 @@ export default function OrdersManagement() {
           size: "N/A",
           color: "N/A",
         }
-      }) || [],
+      }) || []
+
+    const modalOrder = {
+      id: order._id,
+      orderNumber: `ORD-${order._id.slice(-6).toUpperCase()}`,
+      customerName: getUserName(order),
+      customerEmail: getUserEmail(order),
+      items: orderItems,
       total: order.total,
       status: order.status,
       paymentStatus: "paid",
@@ -233,6 +333,66 @@ export default function OrdersManagement() {
               <tr>
                 <th className="text-left px-6 py-4 text-sm font-semibold">{t('order')}</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold">{t('customer')}</th>
+                <th className="text-left px-6 py-4 text-sm font-semibold">
+                  <div className="relative inline-flex items-center gap-1" ref={storeDropdownRef}>
+                    <span>Store</span>
+                    <button
+                      onClick={() => { setStoreDropdownOpen(!storeDropdownOpen); setStoreSearchQuery("") }}
+                      className={`p-1 rounded hover:bg-muted transition-colors ${storeFilter ? "text-primary" : "text-muted-foreground"}`}
+                      title="Filter by store"
+                    >
+                      <Filter className="w-3.5 h-3.5" />
+                    </button>
+                    {storeFilter && (
+                      <button
+                        onClick={() => setStoreFilter(null)}
+                        className="p-0.5 rounded hover:bg-muted text-muted-foreground"
+                        title="Clear filter"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+                    {storeDropdownOpen && (
+                      <div className="absolute top-full left-0 mt-1 z-50 w-64 bg-background border border-border rounded-lg shadow-lg">
+                        <div className="p-2 border-b border-border">
+                          <div className="relative">
+                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+                            <input
+                              type="text"
+                              placeholder="Search merchants..."
+                              value={storeSearchQuery}
+                              onChange={(e) => setStoreSearchQuery(e.target.value)}
+                              className="w-full pl-7 pr-2 py-1.5 text-xs border border-border rounded bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                              autoFocus
+                            />
+                          </div>
+                        </div>
+                        <div className="max-h-48 overflow-y-auto">
+                          <button
+                            onClick={() => { setStoreFilter(null); setStoreDropdownOpen(false) }}
+                            className={`w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center justify-between ${!storeFilter ? "font-semibold text-primary" : ""}`}
+                          >
+                            <span>All Stores</span>
+                            {!storeFilter && <Check className="w-3.5 h-3.5" />}
+                          </button>
+                          {filteredMerchantNames.map((name) => (
+                            <button
+                              key={name}
+                              onClick={() => { setStoreFilter(name); setStoreDropdownOpen(false) }}
+                              className={`w-full text-left px-3 py-2 text-xs hover:bg-muted flex items-center justify-between ${storeFilter === name ? "font-semibold text-primary" : ""}`}
+                            >
+                              <span>{name}</span>
+                              {storeFilter === name && <Check className="w-3.5 h-3.5" />}
+                            </button>
+                          ))}
+                          {filteredMerchantNames.length === 0 && (
+                            <p className="px-3 py-2 text-xs text-muted-foreground">No merchants found</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </th>
                 <th className="text-left px-6 py-4 text-sm font-semibold">{t('items')}</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold">{t('total')}</th>
                 <th className="text-left px-6 py-4 text-sm font-semibold">{t('date')}</th>
@@ -242,7 +402,11 @@ export default function OrdersManagement() {
             </thead>
             <tbody>
               {filteredOrders.map((order) => (
-                <tr key={order._id} className="border-b border-border last:border-0 hover:bg-muted/30">
+                <tr
+                  key={order._id}
+                  ref={order._id === highlightId ? highlightRef : undefined}
+                  className={`border-b border-border last:border-0 hover:bg-muted/30 transition-colors duration-700 ${order._id === highlightId ? 'bg-accent/30' : ''}`}
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
@@ -260,7 +424,17 @@ export default function OrdersManagement() {
                       <p className="text-sm text-muted-foreground">{getUserEmail(order)}</p>
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-sm">{order.products?.length || 0} {t('itemsCount')}</td>
+                  <td className="px-6 py-4 text-sm">
+                    {(() => {
+                      const stores = getStoreNames(order)
+                      return stores.length > 0
+                        ? stores.map((name, i) => (
+                          <span key={i} className="block text-sm">{name}</span>
+                        ))
+                        : <span className="text-muted-foreground">-</span>
+                    })()}
+                  </td>
+                  <td className="px-6 py-4 text-sm">{getItemCount(order)} {t('itemsCount')}</td>
                   <td className="px-6 py-4 font-medium">${(order.total || 0).toFixed(2)}</td>
                   <td className="px-6 py-4 text-sm">
                     {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}

@@ -1,19 +1,25 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useTranslations } from "next-intl"
+import { useSearchParams } from "next/navigation"
 import { Search, Trash2, Store, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import * as merchantService from "@/lib/merchant-service"
 
-// Backend Merchant structure
-interface Merchant {
+// Backend Merchant structure (userId is populated from User model)
+interface MerchantUser {
   _id: string
   name: string
   email: string
   phone: string
-  address: string
+  isActive: boolean
+}
+
+interface Merchant {
+  _id: string
+  userId: MerchantUser
   companyName: string
   companyId: string
   nationalId: string
@@ -28,10 +34,24 @@ export default function AdminStoresPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [highlightId, setHighlightId] = useState<string | null>(null)
+  const highlightRef = useRef<HTMLTableRowElement>(null)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     loadMerchants()
   }, [])
+
+  useEffect(() => {
+    const id = searchParams.get('highlight')
+    if (id && merchants.length > 0) {
+      setHighlightId(id)
+      setTimeout(() => {
+        highlightRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 100)
+      setTimeout(() => setHighlightId(null), 1500)
+    }
+  }, [searchParams, merchants])
 
   const loadMerchants = async () => {
     try {
@@ -51,18 +71,18 @@ export default function AdminStoresPage() {
 
   const filteredMerchants = merchants.filter((merchant) => {
     const matchesSearch =
-      merchant.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      merchant.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       merchant.companyName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      merchant.email?.toLowerCase().includes(searchQuery.toLowerCase())
+      merchant.userId?.email?.toLowerCase().includes(searchQuery.toLowerCase())
     return matchesSearch
   })
 
-  const handleDelete = async (merchantId: string) => {
+  const handleDelete = async (userId: string) => {
     if (confirm(t('deleteConfirm'))) {
       try {
-        setActionLoading(merchantId)
-        await merchantService.deleteMerchant(merchantId)
-        setMerchants(merchants.filter((m) => m._id !== merchantId))
+        setActionLoading(userId)
+        await merchantService.deleteMerchant(userId)
+        setMerchants(merchants.filter((m) => m.userId?._id !== userId))
       } catch (error) {
         console.error("Failed to delete merchant:", error)
         alert("Failed to delete merchant")
@@ -153,17 +173,21 @@ export default function AdminStoresPage() {
           </thead>
           <tbody>
             {filteredMerchants.map((merchant) => (
-              <tr key={merchant._id} className="border-t hover:bg-muted/50">
+              <tr
+                key={merchant._id}
+                ref={merchant._id === highlightId ? highlightRef : undefined}
+                className={`border-t hover:bg-muted/50 transition-colors duration-700 ${merchant._id === highlightId ? 'bg-accent/30' : ''}`}
+              >
                 <td className="p-4">
                   <div>
-                    <div className="font-medium">{merchant.companyName || merchant.name}</div>
-                    <div className="text-sm text-muted-foreground">{merchant.email}</div>
+                    <div className="font-medium">{merchant.companyName || merchant.userId?.name}</div>
+                    <div className="text-sm text-muted-foreground">{merchant.userId?.email}</div>
                   </div>
                 </td>
                 <td className="p-4">
                   <div>
-                    <div className="font-medium">{merchant.name}</div>
-                    <div className="text-sm text-muted-foreground">{merchant.phone}</div>
+                    <div className="font-medium">{merchant.userId?.name}</div>
+                    <div className="text-sm text-muted-foreground">{merchant.userId?.phone}</div>
                   </div>
                 </td>
                 <td className="p-4 text-sm">
@@ -177,10 +201,10 @@ export default function AdminStoresPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleDelete(merchant._id)}
-                      disabled={actionLoading === merchant._id}
+                      onClick={() => handleDelete(merchant.userId?._id)}
+                      disabled={actionLoading === merchant.userId?._id}
                     >
-                      {actionLoading === merchant._id ? (
+                      {actionLoading === merchant.userId?._id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Trash2 className="w-4 h-4 text-red-600" />

@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { LayoutDashboard, Package, Users, ShoppingCart, Settings, Store, Home } from "lucide-react"
+import { LayoutDashboard, Package, Users, ShoppingCart, Store, Home } from "lucide-react"
 import { motion } from "framer-motion"
 
 export function AdminSidebar() {
@@ -38,21 +38,16 @@ export function AdminSidebar() {
       href: `/${locale}/admin/orders`,
       icon: ShoppingCart,
     },
-    {
-      name: t('settings'),
-      href: `/${locale}/admin/settings`,
-      icon: Settings,
-    },
   ]
 
   return (
-    <aside className="w-64 bg-muted/30 border-r border-border min-h-screen">
+    <aside className="w-64 bg-secondary border-r border-border min-h-screen">
       <div className="p-6">
         <motion.h2
           initial={{ opacity: 0, x: -12 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.4 }}
-          className="font-serif text-xl font-semibold mb-4"
+          className="font-serif text-xl font-semibold mb-4 text-secondary-foreground"
         >
           {useTranslations('admin')('title')}
         </motion.h2>
@@ -78,7 +73,7 @@ export function AdminSidebar() {
               >
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted"
+                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${isActive ? "bg-primary text-primary-foreground shadow-sm" : "text-secondary-foreground/70 hover:bg-muted hover:text-secondary-foreground"
                     }`}
                 >
                   <Icon className="w-5 h-5" />

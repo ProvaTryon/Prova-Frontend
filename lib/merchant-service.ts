@@ -40,7 +40,7 @@ export const getAllMerchants = async () => {
 
         console.log('📤 Fetching merchants with token:', token ? 'exists' : 'missing');
 
-        const response = await fetch(`${API_URL}/api/merchants`, {
+        const response = await fetch(`${API_URL}/api/merchants/admin/merchants`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export const getMerchantById = async (merchantId: string) => {
     try {
         const token = localStorage.getItem('authToken');
 
-        const response = await fetch(`${API_URL}/api/merchants/${merchantId}`, {
+        const response = await fetch(`${API_URL}/api/merchants/profile/${merchantId}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
@@ -204,7 +204,7 @@ export const deleteMerchant = async (merchantId: string) => {
     try {
         const token = localStorage.getItem('authToken');
 
-        const response = await fetch(`${API_URL}/api/merchants/${merchantId}`, {
+        const response = await fetch(`${API_URL}/api/merchants/admin/merchant/${merchantId}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${token}`,

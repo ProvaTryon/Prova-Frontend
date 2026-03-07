@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
+import { useParams } from "next/navigation"
+import Link from "next/link"
 import { Package, Users, TrendingUp, Store, Loader2 } from "lucide-react"
 import * as merchantService from "@/lib/merchant-service"
 import * as userService from "@/lib/user-service"
@@ -10,10 +12,17 @@ import * as orderService from "@/lib/order-service"
 import { motion } from "framer-motion"
 
 // Backend data structures
-interface Merchant {
+interface MerchantUser {
   _id: string
   name: string
   email: string
+  phone: string
+  isActive: boolean
+}
+
+interface Merchant {
+  _id: string
+  userId: MerchantUser
   companyName: string
   products: string[]
   createdAt?: string
@@ -33,6 +42,8 @@ interface Order {
 export default function AdminDashboard() {
   const t = useTranslations('admin.dashboard')
   const tStats = useTranslations('admin.dashboard.stats')
+  const params = useParams()
+  const locale = params.locale as string
 
   const [loading, setLoading] = useState(true)
   const [merchants, setMerchants] = useState<Merchant[]>([])
@@ -137,7 +148,7 @@ export default function AdminDashboard() {
         className="mb-8"
       >
         <h1 className="font-serif text-3xl font-semibold mb-2">{t('title')}</h1>
-        <p className="text-muted-foreground">{t('welcome')}</p>
+        <p className="text-muted-foreground">{('welcome')}</p>
       </motion.div>
 
       {/* Stats Grid */}
@@ -178,18 +189,19 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             {merchants.length > 0 ? (
               merchants.slice(0, 5).map((merchant) => (
-                <div
+                <Link
                   key={merchant._id}
-                  className="flex items-center justify-between py-3 border-b border-border last:border-0"
+                  href={`/${locale}/admin/stores?highlight=${merchant._id}`}
+                  className="flex items-center justify-between py-3 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 rounded-lg px-2 -mx-2 transition-colors"
                 >
                   <div>
-                    <p className="font-medium">{merchant.companyName || merchant.name}</p>
-                    <p className="text-sm text-muted-foreground">{merchant.email}</p>
+                    <p className="font-medium">{merchant.companyName || merchant.userId?.name}</p>
+                    <p className="text-sm text-muted-foreground">{merchant.userId?.email}</p>
                   </div>
                   <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-medium rounded-full">
                     {merchant.products?.length || 0} products
                   </span>
-                </div>
+                </Link>
               ))
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">No merchants found</p>
@@ -207,7 +219,7 @@ export default function AdminDashboard() {
           <div className="space-y-4">
             {recentOrders.length > 0 ? (
               recentOrders.map((order) => (
-                <div key={order._id} className="flex items-center justify-between py-3 border-b border-border last:border-0">
+                <Link key={order._id} href={`/${locale}/admin/orders?highlight=${order._id}`} className="flex items-center justify-between py-3 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 rounded-lg px-2 -mx-2 transition-colors">
                   <div>
                     <p className="font-medium">Order #{order._id.slice(-6).toUpperCase()}</p>
                     <p className="text-sm text-muted-foreground">
@@ -215,14 +227,14 @@ export default function AdminDashboard() {
                     </p>
                   </div>
                   <span className={`px-3 py-1 text-xs font-medium rounded-full ${order.status === 'delivered' ? 'bg-green-50 text-green-700' :
-                      order.status === 'pending' ? 'bg-yellow-50 text-yellow-700' :
-                        order.status === 'processing' ? 'bg-blue-50 text-blue-700' :
-                          order.status === 'shipped' ? 'bg-purple-50 text-purple-700' :
-                            'bg-gray-50 text-gray-700'
+                    order.status === 'pending' ? 'bg-yellow-50 text-yellow-700' :
+                      order.status === 'processing' ? 'bg-blue-50 text-blue-700' :
+                        order.status === 'shipped' ? 'bg-purple-50 text-purple-700' :
+                          'bg-gray-50 text-gray-700'
                     }`}>
                     {order.status || 'pending'}
                   </span>
-                </div>
+                </Link>
               ))
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">No recent orders</p>

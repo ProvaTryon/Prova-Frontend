@@ -29,6 +29,7 @@ export default function UsersManagement() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [activeFilter, setActiveFilter] = useState<string | null>(null)
 
   useEffect(() => {
     loadUsers()
@@ -48,11 +49,39 @@ export default function UsersManagement() {
     }
   }
 
-  const filteredUsers = users.filter(
-    (user) =>
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
       user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+
+    if (!activeFilter) return matchesSearch
+
+    let matchesFilter = false
+    switch (activeFilter) {
+      case "total":
+        matchesFilter = true
+        break
+      case "active":
+        matchesFilter = user.isActive
+        break
+      case "user":
+        matchesFilter = user.role === "user"
+        break
+      case "merchant":
+        matchesFilter = user.role === "merchant"
+        break
+      case "cs":
+        matchesFilter = user.role === "cs"
+        break
+      case "admin":
+        matchesFilter = user.role === "admin"
+        break
+      default:
+        matchesFilter = true
+    }
+
+    return matchesSearch && matchesFilter
+  })
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user)
@@ -164,20 +193,52 @@ export default function UsersManagement() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-background border border-border rounded-lg p-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div
+          onClick={() => setActiveFilter(activeFilter === "total" ? null : "total")}
+          className={`bg-background border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${activeFilter === "total" ? "border-primary ring-2 ring-primary/20" : "border-border"
+            }`}
+        >
           <p className="text-sm text-muted-foreground mb-1">{t('totalUsers')}</p>
           <p className="text-2xl font-bold">{users.length}</p>
         </div>
-        <div className="bg-background border border-border rounded-lg p-4">
+        <div
+          onClick={() => setActiveFilter(activeFilter === "active" ? null : "active")}
+          className={`bg-background border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${activeFilter === "active" ? "border-primary ring-2 ring-primary/20" : "border-border"
+            }`}
+        >
           <p className="text-sm text-muted-foreground mb-1">{t('activeUsers')}</p>
           <p className="text-2xl font-bold">{users.filter((u) => u.isActive).length}</p>
         </div>
-        <div className="bg-background border border-border rounded-lg p-4">
+        <div
+          onClick={() => setActiveFilter(activeFilter === "user" ? null : "user")}
+          className={`bg-background border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${activeFilter === "user" ? "border-primary ring-2 ring-primary/20" : "border-border"
+            }`}
+        >
+          <p className="text-sm text-muted-foreground mb-1">Users</p>
+          <p className="text-2xl font-bold">{users.filter((u) => u.role === "user").length}</p>
+        </div>
+        <div
+          onClick={() => setActiveFilter(activeFilter === "merchant" ? null : "merchant")}
+          className={`bg-background border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${activeFilter === "merchant" ? "border-primary ring-2 ring-primary/20" : "border-border"
+            }`}
+        >
           <p className="text-sm text-muted-foreground mb-1">Merchants</p>
           <p className="text-2xl font-bold">{users.filter((u) => u.role === "merchant").length}</p>
         </div>
-        <div className="bg-background border border-border rounded-lg p-4">
+        <div
+          onClick={() => setActiveFilter(activeFilter === "cs" ? null : "cs")}
+          className={`bg-background border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${activeFilter === "cs" ? "border-primary ring-2 ring-primary/20" : "border-border"
+            }`}
+        >
+          <p className="text-sm text-muted-foreground mb-1">Customer Service</p>
+          <p className="text-2xl font-bold">{users.filter((u) => u.role === "cs").length}</p>
+        </div>
+        <div
+          onClick={() => setActiveFilter(activeFilter === "admin" ? null : "admin")}
+          className={`bg-background border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${activeFilter === "admin" ? "border-primary ring-2 ring-primary/20" : "border-border"
+            }`}
+        >
           <p className="text-sm text-muted-foreground mb-1">Admins</p>
           <p className="text-2xl font-bold">{users.filter((u) => u.role === "admin").length}</p>
         </div>

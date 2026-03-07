@@ -435,7 +435,6 @@
       "products": "المنتجات",
       "users": "المستخدمون",
       "orders": "الطلبات",
-      "settings": "الإعدادات",
       "backToStore": "العودة للمتجر"
     },
     "stores": {
@@ -523,11 +522,6 @@
       "paid": "مدفوع",
       "failed": "فشل",
       "noOrdersFound": "لم يتم العثور على طلبات"
-    },
-    "settings": {
-      "title": "الإعدادات",
-      "subtitle": "تكوين إعدادات لوحة الإدارة",
-      "comingSoon": "صفحة الإعدادات قريباً..."
     }
   },
   "storeOwner": {
