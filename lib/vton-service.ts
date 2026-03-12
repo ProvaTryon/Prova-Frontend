@@ -52,7 +52,12 @@ export const processTryOn = async (
             const contentType = response.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
                 const error = await response.json();
-                throw new Error(error.msg || error.message || 'فشل معالجة البروفة الافتراضية');
+                const msg = error.msg || error.message || 'فشل معالجة البروفة الافتراضية';
+                // Detect HTML error pages forwarded from backend
+                if (msg.includes('<!DOCTYPE') || msg.includes('<html')) {
+                    throw new Error('AI service is currently unavailable. Please try again later.');
+                }
+                throw new Error(msg);
             }
             throw new Error(`Error: ${response.status} ${response.statusText}`);
         }

@@ -110,7 +110,7 @@ export function TryOnSection() {
               </p>
               <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} className="inline-block">
                 <Link
-                  href="/virtual-tryon"
+                  href="/shop"
                   className="inline-flex items-center gap-3 bg-accent text-foreground px-8 py-4 text-[11px] font-semibold tracking-[0.15em] uppercase hover:bg-accent/90 transition-colors duration-300"
                 >
                   <Play className="w-4 h-4" />

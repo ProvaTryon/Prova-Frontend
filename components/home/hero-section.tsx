@@ -68,14 +68,6 @@ export function HeroSection() {
               {t('hero.ctaPrimary')}
             </Link>
           </motion.div>
-          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-            <Link
-              href="/virtual-tryon"
-              className="block border border-white/50 text-white px-10 py-4 text-[11px] font-semibold tracking-[0.2em] uppercase hover:border-accent hover:text-accent transition-colors duration-300"
-            >
-              {t('hero.ctaSecondary')}
-            </Link>
-          </motion.div>
         </motion.div>
       </div>
 
