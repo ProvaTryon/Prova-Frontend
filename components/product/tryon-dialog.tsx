@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { fetchProfile, updateProfile } from "@/lib/profile-service"
-import { processTryOn, urlToFile, revokeObjectURL } from "@/lib/vton-service"
+import { processTryOn, urlToFile, revokeObjectURL, processVton360TryOn, getVtonModel, validateImageFile } from "@/lib/vton-service"
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ interface TryOnDialogProps {
   onOpenChange: (open: boolean) => void
   productImage: string
   productName: string
+  productCategory?: string
 }
 
 type Step = "loading" | "upload" | "saved" | "processing" | "result" | "auth-error"
@@ -36,7 +37,7 @@ function sanitizeError(msg?: string): string {
   return msg
 }
 
-export function TryOnDialog({ open, onOpenChange, productImage, productName }: TryOnDialogProps) {
+export function TryOnDialog({ open, onOpenChange, productImage, productName, productCategory }: TryOnDialogProps) {
   const t = useTranslations("productDetail")
   const { user, logout } = useAuth()
   const { toast } = useToast()
@@ -108,6 +109,13 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName }: T
       return
     }
 
+    try {
+      validateImageFile(file)
+    } catch {
+      setError(t("tryOn.invalidFileType") || "Invalid file type. Please upload JPEG, PNG, or WebP.")
+      return
+    }
+
     setError(null)
     setUploadedFile(file)
     const preview = URL.createObjectURL(file)
@@ -127,12 +135,22 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName }: T
     setStep("processing")
     setError(null)
 
+    const model = getVtonModel(productCategory)
+    // VTON360 pipeline is much slower (Colab inference) — allow 10 min
+    const timeoutMs = model === 'vton360' ? 600_000 : 120_000
+
     abortRef.current = new AbortController()
-    const timeout = setTimeout(() => abortRef.current?.abort(), 120_000)
+    const timer = setTimeout(() => abortRef.current?.abort(), timeoutMs)
 
     try {
       const garmentFile = await urlToFile(productImage, `garment.jpg`)
-      const result = await processTryOn(personFile, garmentFile)
+      const signal = abortRef.current.signal
+      let result: string
+      if (model === 'vton360') {
+        result = await processVton360TryOn(personFile, garmentFile, signal)
+      } else {
+        result = await processTryOn(personFile, garmentFile, { category: 1, signal })
+      }
       setResultUrl(result)
       setStep("result")
     } catch (err: any) {
@@ -143,10 +161,10 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName }: T
       }
       setStep(savedImageUrl ? "saved" : "upload")
     } finally {
-      clearTimeout(timeout)
+      clearTimeout(timer)
       abortRef.current = null
     }
-  }, [productImage, savedImageUrl, t])
+  }, [productImage, productCategory, savedImageUrl, t])
 
   const handleUseSavedImage = useCallback(async () => {
     if (!savedImageUrl) return
