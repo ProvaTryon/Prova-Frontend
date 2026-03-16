@@ -45,7 +45,6 @@ export default function MerchantOrdersPage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [actionLoading, setActionLoading] = useState<string | null>(null)
 
     useEffect(() => {
         loadOrders()
@@ -88,23 +87,6 @@ export default function MerchantOrdersPage() {
             getUserName(order).toLowerCase().includes(searchQuery.toLowerCase()) ||
             getUserEmail(order).toLowerCase().includes(searchQuery.toLowerCase()),
     )
-
-    const handleStatusChange = async (orderId: string, newStatus: Order["status"]) => {
-        try {
-            setActionLoading(orderId)
-            // Find the current order to pass its data for validation
-            const currentOrder = orders.find(o => o._id === orderId)
-            await orderService.changeOrderStatus(orderId, { status: newStatus }, currentOrder)
-            setOrders(orders.map((order) => (order._id === orderId ? { ...order, status: newStatus } : order)))
-        } catch (error: any) {
-            console.error("Failed to update order status:", error)
-            alert(error.message || "Failed to update order status")
-            // Reload orders to get the current state from database
-            loadOrders()
-        } finally {
-            setActionLoading(null)
-        }
-    }
 
     const handleViewOrder = (order: Order) => {
         // Transform order for the modal
@@ -170,7 +152,7 @@ export default function MerchantOrdersPage() {
     }
 
     return (
-        <div>
+        <div className="p-8">
             <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -183,22 +165,22 @@ export default function MerchantOrdersPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 {[
-                  { label: t('totalOrders'), value: orders.length },
-                  { label: t('totalRevenue'), value: `$${totalRevenue.toFixed(2)}` },
-                  { label: t('pending'), value: pendingOrders },
-                  { label: t('shipped'), value: shippedOrders },
+                    { label: t('totalOrders'), value: orders.length },
+                    { label: t('totalRevenue'), value: `$${totalRevenue.toFixed(2)}` },
+                    { label: t('pending'), value: pendingOrders },
+                    { label: t('shipped'), value: shippedOrders },
                 ].map((stat, index) => (
-                  <motion.div
-                    key={stat.label}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1, duration: 0.4 }}
-                    whileHover={{ y: -2 }}
-                    className="bg-background border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
-                  >
-                    <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
-                    <p className="text-2xl font-bold">{stat.value}</p>
-                  </motion.div>
+                    <motion.div
+                        key={stat.label}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1, duration: 0.4 }}
+                        whileHover={{ y: -2 }}
+                        className="bg-background border border-border rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                        <p className="text-sm text-muted-foreground mb-1">{stat.label}</p>
+                        <p className="text-2xl font-bold">{stat.value}</p>
+                    </motion.div>
                 ))}
             </div>
 
@@ -261,19 +243,12 @@ export default function MerchantOrdersPage() {
                                         {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "-"}
                                     </td>
                                     <td className="px-6 py-4">
-                                        <select
-                                            value={order.status}
-                                            onChange={(e) => handleStatusChange(order._id, e.target.value as Order["status"])}
-                                            className={`px-2 py-1 text-xs font-medium rounded capitalize ${statusColors[order.status] || "bg-gray-50 text-gray-700"} disabled:opacity-50`}
-                                            aria-label={t('status')}
-                                            disabled={actionLoading === order._id}
+                                        <span
+                                            className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded capitalize ${statusColors[order.status] || "bg-gray-50 text-gray-700"}`}
+                                            aria-label={`${t('status')}: ${t(order.status)}`}
                                         >
-                                            <option value="pending">{t('pending')}</option>
-                                            <option value="processing">{t('processing')}</option>
-                                            <option value="shipped">{t('shipped')}</option>
-                                            <option value="delivered">{t('delivered')}</option>
-                                            <option value="cancelled">{t('cancelled')}</option>
-                                        </select>
+                                            {t(order.status)}
+                                        </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center justify-end gap-2">
@@ -281,13 +256,8 @@ export default function MerchantOrdersPage() {
                                                 onClick={() => handleViewOrder(order)}
                                                 className="p-2 hover:bg-muted rounded-lg transition-colors"
                                                 title={t('viewOrder')}
-                                                disabled={actionLoading === order._id}
                                             >
-                                                {actionLoading === order._id ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <Eye className="w-4 h-4" />
-                                                )}
+                                                <Eye className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </td>

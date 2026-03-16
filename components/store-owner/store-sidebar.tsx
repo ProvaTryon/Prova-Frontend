@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { Package, BarChart3, Settings, Home, Store, ShoppingCart, Building2 } from "lucide-react"
+import { Package, BarChart3, Home, Store, ShoppingCart } from "lucide-react"
 import { motion } from "framer-motion"
 
 export function StoreSidebar() {
@@ -17,9 +17,7 @@ export function StoreSidebar() {
     { href: `/${locale}/store-owner`, label: t('dashboard'), icon: Home },
     { href: `/${locale}/store-owner/products`, label: t('myProducts'), icon: Package },
     { href: `/${locale}/store-owner/orders`, label: t('orders'), icon: ShoppingCart },
-    { href: `/${locale}/store-owner/branches`, label: t('branches'), icon: Building2 },
     { href: `/${locale}/store-owner/analytics`, label: t('analytics'), icon: BarChart3 },
-    { href: `/${locale}/store-owner/settings`, label: t('settings'), icon: Settings },
   ]
 
   return (

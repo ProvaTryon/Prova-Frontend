@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { MessageSquare, BarChart3, Settings, Home, Store } from "lucide-react"
+import { MessageSquare, BarChart3, Home, Store } from "lucide-react"
 import { motion } from "framer-motion"
 
 export function CSSidebar() {
@@ -17,7 +17,6 @@ export function CSSidebar() {
     { href: `/${locale}/customer-service`, label: t('dashboard'), icon: Home },
     { href: `/${locale}/customer-service/conversations`, label: t('conversations'), icon: MessageSquare },
     { href: `/${locale}/customer-service/analytics`, label: t('analytics'), icon: BarChart3 },
-    { href: `/${locale}/customer-service/settings`, label: t('settings'), icon: Settings },
   ]
 
   return (
