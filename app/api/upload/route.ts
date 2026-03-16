@@ -9,13 +9,21 @@
  *   - Max 5 MB
  */
 import { NextRequest, NextResponse } from "next/server"
-import cloudinary, { PRODUCT_FOLDER } from "@/lib/cloudinary"
+import cloudinary, { PRODUCT_FOLDER, USER_FOLDER } from "@/lib/cloudinary"
 
 const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]
 
+const FOLDER_MAP: Record<string, string> = {
+  product: PRODUCT_FOLDER,
+  user: USER_FOLDER,
+}
+
 export async function POST(req: NextRequest) {
   try {
+    const folderType = req.nextUrl.searchParams.get("type") ?? "product"
+    const folder = FOLDER_MAP[folderType] ?? PRODUCT_FOLDER
+
     const formData = await req.formData()
     const file = formData.get("file") as File | null
 
@@ -48,7 +56,7 @@ export async function POST(req: NextRequest) {
       (resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
           {
-            folder: PRODUCT_FOLDER,
+            folder,
             resource_type: "image",
           },
           (error, result) => {

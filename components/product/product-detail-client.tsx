@@ -10,7 +10,9 @@ import type { Product } from "@/lib/product-service"
 import { ProductCard } from "@/components/product/product-card"
 import { useTranslations } from "next-intl"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/lib/auth-context"
 import { motion, AnimatePresence } from "framer-motion"
+import { TryOnDialog } from "@/components/product/tryon-dialog"
 
 interface ProductDetailClientProps {
   product: any
@@ -58,10 +60,12 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
   const [selectedColor, setSelectedColor] = useState("")
   const [quantity, setQuantity] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
+  const [tryOnOpen, setTryOnOpen] = useState(false)
 
   const { addItem } = useCart()
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist()
   const { toast } = useToast()
+  const { isAuthenticated } = useAuth()
   const isWishlisted = isInWishlist(mappedProduct.id)
 
   const canAddToCart = selectedSize && selectedColor
@@ -286,12 +290,29 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                   t("addToCart")
                 )}
               </button>
-              <Link
-                href="/virtual-tryon"
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    toast({
+                      title: t("tryOn.loginRequired"),
+                      description: t("tryOn.loginRequiredDesc"),
+                      variant: "destructive",
+                    })
+                    return
+                  }
+                  setTryOnOpen(true)
+                }}
                 className="w-full py-4 border-2 border-foreground text-foreground font-medium hover:bg-foreground hover:text-background transition-all flex items-center justify-center"
               >
                 {t("tryOnVirtually")}
-              </Link>
+              </button>
+              <TryOnDialog
+                open={tryOnOpen}
+                onOpenChange={setTryOnOpen}
+                productImage={mappedProduct.image}
+                productName={mappedProduct.name}
+                productCategory={mappedProduct.category}
+              />
               <button
                 onClick={handleWishlistToggle}
                 className="w-full py-4 border border-border font-medium hover:bg-muted transition-colors flex items-center justify-center gap-2"

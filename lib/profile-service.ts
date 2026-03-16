@@ -33,6 +33,7 @@ export interface ProfileData {
   provider: 'local' | 'google';
   googleId?: string;
   profileImage?: string;
+  tryonImage?: string;
   isActive: boolean;
   lastLogin?: string;
   createdAt?: string;
@@ -45,6 +46,7 @@ export interface UpdateProfilePayload {
   address?: string;
   birth_date?: string;
   profileImage?: string;
+  tryonImage?: string;
 }
 
 interface ApiResponse<T> {

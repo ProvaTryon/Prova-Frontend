@@ -3,7 +3,7 @@ import { Footer } from "@/components/layout/footer"
 import { BestSellers } from "@/components/home/best-sellers"
 import { NewsletterSection } from "@/components/home/newsletter-section"
 import { HeroSection } from "@/components/home/hero-section"
-import { FeaturedCollections, TryOnSection, CollectionsGrid, TestimonialSection } from "@/components/home/home-sections"
+import { FeaturedCollections, CollectionsGrid, TestimonialSection } from "@/components/home/home-sections"
 
 export default function HomePage() {
   return (
@@ -26,11 +26,6 @@ export default function HomePage() {
             BEST SELLERS — Editorial Grid
             ═══════════════════════════════════════ */}
         <BestSellers />
-
-        {/* ═══════════════════════════════════════
-            VIRTUAL TRY-ON — Dark Cinematic Block
-            ═══════════════════════════════════════ */}
-        <TryOnSection />
 
         {/* ═══════════════════════════════════════
             COLLECTIONS — Curated Grid

@@ -16,3 +16,6 @@ export default cloudinary
 
 /** Folder used for all product images */
 export const PRODUCT_FOLDER = "prova/products"
+
+/** Folder used for user-uploaded images (try-on photos) */
+export const USER_FOLDER = "prova/users"
