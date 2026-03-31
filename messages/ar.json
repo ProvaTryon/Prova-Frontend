@@ -5,6 +5,7 @@
     "shop": "المتجر",
     "virtualTryon": "القياس الافتراضي",
     "forYou": "لك",
+    "community": "الكميونتي",
     "wishlist": "المفضلة",
     "cart": "السلة",
     "login": "تسجيل الدخول",
@@ -869,5 +870,130 @@
     "orderIdLabel": "رقم الطلب",
     "continueShopping": "متابعة التسوق",
     "viewOrders": "عرض طلباتي"
+  },
+  "community": {
+    "title": "الكميونتي",
+    "subtitle": "شارك تجاربك، اطرح أسئلتك، واستعرض تصاميمك مع المجتمع",
+    "newPost": "منشور جديد",
+    "createNewPost": "إنشاء منشور جديد",
+    "uploadDesign": "رفع تصميم",
+    "uploadNewDesign": "رفع تصميم جديد",
+    "uploadDescription": "شارك تصميمك مع المجتمع! التصاميم الأكثر تفاعلاً قد يتم إنتاجها من قبل Prova.",
+    "tabs": {
+      "posts": "المنشورات",
+      "designs": "التصاميم"
+    },
+    "postTypes": {
+      "all": "الكل",
+      "issue": "مشكلة",
+      "review": "تقييم",
+      "tip": "نصيحة",
+      "question": "سؤال"
+    },
+    "postTypeDescriptions": {
+      "issue": "شارك مشكلة واجهتها",
+      "review": "قيّم متجراً أو منتجاً",
+      "tip": "شارك نصيحة مفيدة",
+      "question": "اسأل المجتمع"
+    },
+    "designCategories": {
+      "all": "الكل",
+      "tshirt": "تي شيرت",
+      "hoodie": "هودي",
+      "pants": "بنطلون",
+      "jacket": "جاكيت",
+      "dress": "فستان",
+      "accessories": "إكسسوارات",
+      "other": "أخرى"
+    },
+    "designStatus": {
+      "inProduction": "قيد الإنتاج",
+      "pending": "قيد الانتظار",
+      "approved": "معتمد",
+      "rejected": "مرفوض"
+    },
+    "sort": {
+      "newest": "الأحدث",
+      "popular": "الأكثر إعجاباً",
+      "mostCommented": "الأكثر تعليقاً",
+      "mostVoted": "الأكثر تصويتاً",
+      "trending": "رائج"
+    },
+    "filters": {
+      "category": "الفئة",
+      "sortBy": "ترتيب حسب"
+    },
+    "form": {
+      "postType": "نوع المنشور",
+      "title": "العنوان",
+      "content": "المحتوى",
+      "rating": "التقييم",
+      "imagesOptional": "الصور (اختياري)",
+      "imageLimit5": "يمكنك إضافة حتى 5 صور ({count}/5)",
+      "designImages": "صور التصميم",
+      "designName": "اسم التصميم",
+      "designDescription": "وصف التصميم",
+      "category": "الفئة",
+      "tags": "الوسوم (اختياري)",
+      "add": "إضافة",
+      "mainImage": "الرئيسية",
+      "imageLimit": "أضف حتى 10 صور للتصميم ({count}/10)",
+      "cancel": "إلغاء",
+      "uploading": "جاري الرفع...",
+      "uploadDesign": "رفع التصميم",
+      "publishing": "جاري النشر...",
+      "publish": "نشر",
+      "placeholders": {
+        "title": "عنوان قصير وواضح...",
+        "content": "اكتب تفاصيل منشورك هنا...",
+        "designName": "اسم مميز لتصميمك...",
+        "designDescription": "اشرح فكرة التصميم والإلهام وراءه...",
+        "selectCategory": "اختر فئة التصميم",
+        "addTag": "أضف وسم واضغط Enter"
+      },
+      "validation": {
+        "titleRequired": "العنوان مطلوب",
+        "contentRequired": "المحتوى مطلوب",
+        "ratingRequired": "التقييم مطلوب للمراجعات",
+        "descriptionRequired": "وصف التصميم مطلوب",
+        "categoryRequired": "الفئة مطلوبة",
+        "imageRequired": "يجب إضافة صورة واحدة على الأقل"
+      },
+      "errors": {
+        "createFailed": "فشل في إنشاء المنشور. حاول مرة أخرى.",
+        "uploadFailed": "فشل في رفع التصميم. حاول مرة أخرى."
+      }
+    },
+    "card": {
+      "save": "حفظ",
+      "unsave": "إلغاء الحفظ",
+      "report": "إبلاغ",
+      "share": "مشاركة"
+    },
+    "spotlight": {
+      "title": "تصاميم مميزة",
+      "trending": "رائج",
+      "viewAll": "عرض الكل",
+      "noDesigns": "لا توجد تصاميم بعد. كن أول من يشارك تصميمه!",
+      "shareDesign": "شارك تصميمك",
+      "voteSuccess": "تم التصويت بنجاح",
+      "voteFailed": "فشل التصويت. حاول مرة أخرى."
+    },
+    "feed": {
+      "loadFailed": "فشل في تحميل المنشورات",
+      "retry": "إعادة المحاولة",
+      "noPosts": "لا توجد منشورات بعد.",
+      "beFirst": "كن أول من يشارك تجربته مع المجتمع!",
+      "endOfPosts": "لقد وصلت إلى نهاية المنشورات"
+    },
+    "grid": {
+      "loadFailed": "فشل في تحميل التصاميم",
+      "retry": "إعادة المحاولة",
+      "noDesigns": "لا توجد تصاميم بعد.",
+      "beFirst": "كن أول من يشارك تصميمه!",
+      "loadMore": "تحميل المزيد",
+      "loading": "جاري التحميل...",
+      "endOfDesigns": "لقد وصلت إلى نهاية التصاميم"
+    }
   }
 }

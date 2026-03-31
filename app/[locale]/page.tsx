@@ -4,6 +4,7 @@ import { BestSellers } from "@/components/home/best-sellers"
 import { NewsletterSection } from "@/components/home/newsletter-section"
 import { HeroSection } from "@/components/home/hero-section"
 import { FeaturedCollections, CollectionsGrid, TestimonialSection } from "@/components/home/home-sections"
+import { DesignerSpotlight } from "@/components/community"
 
 export default function HomePage() {
   return (
@@ -21,6 +22,11 @@ export default function HomePage() {
             FEATURED COLLECTION — 2-Column Editorial
             ═══════════════════════════════════════ */}
         <FeaturedCollections />
+
+        {/* ═══════════════════════════════════════
+            DESIGNER SPOTLIGHT — Community Designs
+            ═══════════════════════════════════════ */}
+        <DesignerSpotlight />
 
         {/* ═══════════════════════════════════════
             BEST SELLERS — Editorial Grid
