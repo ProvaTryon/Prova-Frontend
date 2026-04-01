@@ -166,13 +166,6 @@ export default function StoreOwnerDashboard() {
               <h3 className="font-medium mb-1">{t('viewAnalytics')}</h3>
               <p className="text-sm text-muted-foreground">{t('viewAnalyticsDesc')}</p>
             </Link>
-            <Link
-              href={`/${locale}/store-owner/settings`}
-              className="block p-4 border rounded-lg hover:bg-accent transition-colors"
-            >
-              <h3 className="font-medium mb-1">{t('storeSettings')}</h3>
-              <p className="text-sm text-muted-foreground">{t('storeSettingsDesc')}</p>
-            </Link>
           </div>
         </motion.div>
       </div>

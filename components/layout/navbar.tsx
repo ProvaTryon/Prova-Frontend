@@ -69,6 +69,7 @@ export function Navbar() {
             {[
               { href: "/", label: t('home') },
               { href: "/shop", label: t('shop') },
+              { href: "/community", label: t('community') },
               { href: "/recommendations", label: t('forYou') },
             ].map((link) => (
               <Link
@@ -297,6 +298,7 @@ export function Navbar() {
               {[
                 { href: "/", label: t('home') },
                 { href: "/shop", label: t('shop') },
+                { href: "/community", label: t('community') },
                 { href: "/recommendations", label: t('forYou') },
               ].map((link, i) => (
                 <motion.div

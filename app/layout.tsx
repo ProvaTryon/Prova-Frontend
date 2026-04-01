@@ -6,6 +6,8 @@ import { routing } from '@/i18n/routing'
 import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
+export const runtime = 'edge';
+
 const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: "--font-serif",

@@ -5,6 +5,7 @@
     "shop": "Shop",
     "virtualTryon": "Virtual Try-On",
     "forYou": "For You",
+    "community": "Community",
     "wishlist": "Wishlist",
     "cart": "Cart",
     "login": "Sign In",
@@ -881,5 +882,130 @@
     "orderIdLabel": "Order ID",
     "continueShopping": "Continue Shopping",
     "viewOrders": "View My Orders"
+  },
+  "community": {
+    "title": "Community",
+    "subtitle": "Share your experiences, ask questions, and showcase your designs with the community",
+    "newPost": "New Post",
+    "createNewPost": "Create New Post",
+    "uploadDesign": "Upload Design",
+    "uploadNewDesign": "Upload New Design",
+    "uploadDescription": "Share your design with the community! The most popular designs may be produced by Prova.",
+    "tabs": {
+      "posts": "Posts",
+      "designs": "Designs"
+    },
+    "postTypes": {
+      "all": "All",
+      "issue": "Issue",
+      "review": "Review",
+      "tip": "Tip",
+      "question": "Question"
+    },
+    "postTypeDescriptions": {
+      "issue": "Share an issue you faced",
+      "review": "Rate a store or product",
+      "tip": "Share a helpful tip",
+      "question": "Ask the community"
+    },
+    "designCategories": {
+      "all": "All",
+      "tshirt": "T-Shirt",
+      "hoodie": "Hoodie",
+      "pants": "Pants",
+      "jacket": "Jacket",
+      "dress": "Dress",
+      "accessories": "Accessories",
+      "other": "Other"
+    },
+    "designStatus": {
+      "inProduction": "In Production",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "sort": {
+      "newest": "Newest",
+      "popular": "Most Liked",
+      "mostCommented": "Most Commented",
+      "mostVoted": "Most Voted",
+      "trending": "Trending"
+    },
+    "filters": {
+      "category": "Category",
+      "sortBy": "Sort by"
+    },
+    "form": {
+      "postType": "Post Type",
+      "title": "Title",
+      "content": "Content",
+      "rating": "Rating",
+      "imagesOptional": "Images (optional)",
+      "imageLimit5": "You can add up to 5 images ({count}/5)",
+      "designImages": "Design Images",
+      "designName": "Design Name",
+      "designDescription": "Design Description",
+      "category": "Category",
+      "tags": "Tags (optional)",
+      "add": "Add",
+      "mainImage": "Main",
+      "imageLimit": "Add up to 10 design images ({count}/10)",
+      "cancel": "Cancel",
+      "uploading": "Uploading...",
+      "uploadDesign": "Upload Design",
+      "publishing": "Publishing...",
+      "publish": "Publish",
+      "placeholders": {
+        "title": "A short and clear title...",
+        "content": "Write your post details here...",
+        "designName": "A unique name for your design...",
+        "designDescription": "Explain the design idea and inspiration behind it...",
+        "selectCategory": "Select design category",
+        "addTag": "Add a tag and press Enter"
+      },
+      "validation": {
+        "titleRequired": "Title is required",
+        "contentRequired": "Content is required",
+        "ratingRequired": "Rating is required for reviews",
+        "descriptionRequired": "Description is required",
+        "categoryRequired": "Category is required",
+        "imageRequired": "At least one image is required"
+      },
+      "errors": {
+        "createFailed": "Failed to create post. Please try again.",
+        "uploadFailed": "Failed to upload design. Please try again."
+      }
+    },
+    "card": {
+      "save": "Save",
+      "unsave": "Unsave",
+      "report": "Report",
+      "share": "Share"
+    },
+    "spotlight": {
+      "title": "Designer Spotlight",
+      "trending": "Trending",
+      "viewAll": "View All",
+      "noDesigns": "No designs yet. Be the first to share your design!",
+      "shareDesign": "Share Your Design",
+      "voteSuccess": "Vote submitted successfully",
+      "voteFailed": "Failed to submit vote. Please try again."
+    },
+    "feed": {
+      "loadFailed": "Failed to load posts",
+      "retry": "Retry",
+      "noPosts": "No posts yet.",
+      "beFirst": "Be the first to share your experience with the community!",
+      "endOfPosts": "You've reached the end of posts"
+    },
+    "grid": {
+      "loadFailed": "Failed to load designs",
+      "retry": "Retry",
+      "noDesigns": "No designs yet.",
+      "beFirst": "Be the first to share your design!",
+      "loadMore": "Load More",
+      "loading": "Loading...",
+      "endOfDesigns": "You've reached the end of designs"
+    }
   }
 }
