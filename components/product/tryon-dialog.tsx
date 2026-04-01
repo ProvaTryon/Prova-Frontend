@@ -247,7 +247,7 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
           setSavedSideImageUrl(sideCloudUrl)
 
           // Trigger measurements refresh without blocking virtual try-on flow.
-          refreshMeasurementsFromProfile({ engine: "mediapipe" }).catch(() => {
+          refreshMeasurementsFromProfile({ engine: "shapy" }).catch(() => {
             toast({
               title: t("tryOn.measurementRefreshFailed") || "Size recommendation update failed",
               description: t("tryOn.measurementRefreshFailedDesc") || "Please retry from your profile later.",

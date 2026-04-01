@@ -387,7 +387,7 @@
     "tryonSave": "Save Try-On Photos",
     "tryonSettingsSaved": "Try-on photos saved successfully",
     "tryonSettingsSavedAndMeasured": "Try-on photos and measurements saved successfully",
-    "measurementRefreshSkipped": "Try-on photos saved. Add both front and side photos to refresh measurements.",
+    "measurementRefreshSkipped": "Try-on photos saved. Add a front photo to refresh measurements.",
     "measurementRefreshFailed": "Try-on photos saved, but refreshing measurements failed. Please try again.",
     "tryonNoImageSelected": "Please upload at least one photo to save",
     "connectedWithGoogle": "Connected with Google",

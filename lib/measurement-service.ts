@@ -51,7 +51,7 @@ interface RefreshPayload {
   gender?: 'male' | 'female' | 'unisex'
   region?: 'EU' | 'US' | 'UK' | 'IT' | 'FR' | 'DE'
   fit?: 'regular' | 'slim' | 'oversized'
-  engine?: 'mediapipe'
+  engine?: 'mediapipe' | 'shapy'
 }
 
 function getAuthHeaders(): HeadersInit {

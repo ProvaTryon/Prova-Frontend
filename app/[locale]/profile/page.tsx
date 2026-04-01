@@ -583,9 +583,9 @@ export default function ProfilePage() {
       let measurementRefreshSkipped = false
 
       if (imagesChanged) {
-        if (updated.tryonImage && updated.tryonSideImage) {
+        if (updated.tryonImage) {
           try {
-            await refreshMeasurementsFromProfile({ engine: "mediapipe" })
+            await refreshMeasurementsFromProfile({ engine: "shapy" })
           } catch {
             measurementRefreshFailed = true
           }

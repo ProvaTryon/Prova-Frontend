@@ -387,7 +387,7 @@
     "tryonSave": "حفظ صور التجربة الافتراضية",
     "tryonSettingsSaved": "تم حفظ صور التجربة الافتراضية بنجاح",
     "tryonSettingsSavedAndMeasured": "تم حفظ صور التجربة الافتراضية والقياسات بنجاح",
-    "measurementRefreshSkipped": "تم حفظ صور التجربة الافتراضية. أضف الصورتين الأمامية والجانبية لتحديث القياسات.",
+    "measurementRefreshSkipped": "تم حفظ صور التجربة الافتراضية. أضف صورة أمامية لتحديث القياسات.",
     "measurementRefreshFailed": "تم حفظ صور التجربة الافتراضية، لكن فشل تحديث القياسات. يرجى المحاولة مرة أخرى.",
     "tryonNoImageSelected": "يرجى رفع صورة واحدة على الأقل للحفظ",
     "connectedWithGoogle": "متصل بحساب جوجل",
