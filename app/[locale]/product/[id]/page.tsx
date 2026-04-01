@@ -9,6 +9,8 @@ import { Loader2 } from "lucide-react"
 import * as productService from "@/lib/product-service"
 import type { Product } from "@/lib/product-service"
 import * as recommendationService from "@/lib/recommendation-service"
+import { fetchLatestMeasurements, getRecommendedSizeForProduct } from "@/lib/measurement-service"
+import { Link } from "@/i18n/routing"
 import { motion, AnimatePresence } from "framer-motion"
 
 export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -26,17 +28,34 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         // Fetch product detail from backend
         const productData = await productService.getProductById(id)
-        setProduct(productData)
+        const latestMeasurement = await fetchLatestMeasurements().catch(() => null)
+        const productWithRecommendation: Product = {
+          ...productData,
+          recommendedSize: getRecommendedSizeForProduct(productData, latestMeasurement) || undefined,
+        }
+        setProduct(productWithRecommendation)
 
         // Fetch related/similar products from backend
         try {
           const similar = await recommendationService.getSimilarProducts(id)
-          setRelatedProducts(similar.slice(0, 4))
+          const withRecommendations = similar
+            .slice(0, 4)
+            .map((item: Product) => ({
+              ...item,
+              recommendedSize: getRecommendedSizeForProduct(item, latestMeasurement) || undefined,
+            }))
+          setRelatedProducts(withRecommendations)
         } catch {
           // If recommendations fail, try to get products from same category
           try {
             const categoryProducts = await productService.getProductsByCategory(productData.category)
-            const related = categoryProducts.filter((p) => p.id !== id).slice(0, 4)
+            const related = categoryProducts
+              .filter((p) => p.id !== id)
+              .slice(0, 4)
+              .map((item) => ({
+                ...item,
+                recommendedSize: getRecommendedSizeForProduct(item, latestMeasurement) || undefined,
+              }))
             setRelatedProducts(related)
           } catch {
             setRelatedProducts([])
@@ -78,9 +97,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           >
             <div className="text-center">
               <p className="text-muted-foreground mb-4">{error || "Product not found"}</p>
-              <a href="/shop" className="text-primary hover:underline">
+              <Link href="/shop" className="text-primary hover:underline">
                 Back to Shop
-              </a>
+              </Link>
             </div>
           </motion.div>
         ) : (

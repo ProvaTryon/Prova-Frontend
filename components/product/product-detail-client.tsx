@@ -1,22 +1,26 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useCart } from "@/lib/cart-context"
 import { useWishlist } from "@/lib/wishlist-context"
 import Image from "next/image"
 import { Link } from "@/i18n/routing"
 import { Heart, Minus, Plus, Check, ShoppingBag } from "lucide-react"
-import type { Product } from "@/lib/product-service"
 import { ProductCard } from "@/components/product/product-card"
 import { useTranslations } from "next-intl"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
 import { motion, AnimatePresence } from "framer-motion"
 import { TryOnDialog } from "@/components/product/tryon-dialog"
+import type { Product } from "@/lib/product-service"
+
+interface ProductLike extends Product {
+  _id?: string
+}
 
 interface ProductDetailClientProps {
-  product: any
-  relatedProducts: any[]
+  product: ProductLike
+  relatedProducts: ProductLike[]
 }
 
 export function ProductDetailClient({ product, relatedProducts }: ProductDetailClientProps) {
@@ -33,13 +37,15 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
     images: product.images || [product.image],
     description: product.description || "",
     inStock: product.inStock !== false,
-    salePrice: product.salePrice || null,
+    sizeMeasurementChart: product.sizeMeasurementChart || [],
+    salePrice: product.salePrice ?? undefined,
     material: product.material || '',
     tags: product.tags || [],
     gender: product.gender || '',
+    recommendedSize: product.recommendedSize || product.matchedSize || undefined,
   }
 
-  const mappedRelated = relatedProducts.map((p: any) => ({
+  const mappedRelated = relatedProducts.map((p) => ({
     id: p._id || p.id || "",
     name: p.name,
     brand: p.brand || "Fashion Brand",
@@ -51,6 +57,8 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
     images: p.images || [p.image],
     description: p.description || "",
     inStock: p.inStock !== false,
+    sizeMeasurementChart: p.sizeMeasurementChart || [],
+    recommendedSize: p.recommendedSize || p.matchedSize || undefined,
   }))
 
   const t = useTranslations("productDetail")
@@ -69,6 +77,15 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
   const isWishlisted = isInWishlist(mappedProduct.id)
 
   const canAddToCart = selectedSize && selectedColor
+
+  useEffect(() => {
+    if (
+      mappedProduct.recommendedSize &&
+      mappedProduct.sizes.includes(mappedProduct.recommendedSize)
+    ) {
+      setSelectedSize(mappedProduct.recommendedSize)
+    }
+  }, [mappedProduct.recommendedSize, mappedProduct.sizes])
 
   const handleAddToCart = () => {
     if (!selectedSize || !selectedColor) {
@@ -219,6 +236,15 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
               <label className="block text-sm font-semibold mb-3">
                 {t("size")}: {selectedSize && <span className="font-normal text-muted-foreground no-flip">{selectedSize}</span>}
               </label>
+              {mappedProduct.recommendedSize ? (
+                <div className="mb-3 inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 no-flip">
+                  {t("recommendedSize") || "Recommended Size"}: {mappedProduct.recommendedSize}
+                </div>
+              ) : (
+                <p className="mb-3 text-xs text-muted-foreground no-flip">
+                  {t("noRecommendedSize") || "No size recommendation available yet."}
+                </p>
+              )}
               <div className="flex flex-wrap gap-2">
                 {mappedProduct.sizes.map((size: string) => (
                   <button

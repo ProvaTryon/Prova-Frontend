@@ -5,11 +5,19 @@ import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { ProductCard } from "@/components/product/product-card"
 import { FilterSidebar } from "@/components/shop/filter-sidebar"
-import { SlidersHorizontal, Search, Loader2, AlertCircle } from "lucide-react"
+import { SlidersHorizontal, Search, Loader2 } from "lucide-react"
 import { useTranslations } from "next-intl"
 import * as productService from "@/lib/product-service"
 import type { Product } from "@/lib/product-service"
+import { fetchLatestMeasurements, getRecommendedSizeForProduct } from "@/lib/measurement-service"
 import { motion, AnimatePresence } from "framer-motion"
+
+const DEFAULT_PRODUCT_TYPES = [
+  "T-Shirt", "Shirt", "Pants", "Jeans", "Shorts",
+  "Jacket", "Coat", "Hoodie", "Sweater",
+  "Dress", "Skirt", "Blouse",
+  "Belt", "Shoes", "Bag", "Accessory"
+]
 
 export default function ShopPage() {
   const t = useTranslations('shop')
@@ -33,10 +41,18 @@ export default function ShopPage() {
       try {
         setLoading(true)
         setError("")
-        const data = await productService.getAllProducts()
+        const [data, latestMeasurement] = await Promise.all([
+          productService.getAllProducts(),
+          fetchLatestMeasurements().catch(() => null),
+        ])
 
         if (data && Array.isArray(data)) {
-          setProducts(data)
+          const withRecommendations = data.map((item) => ({
+            ...item,
+            recommendedSize:
+              getRecommendedSizeForProduct(item, latestMeasurement) || undefined,
+          }))
+          setProducts(withRecommendations)
         } else {
           setProducts([])
         }
@@ -117,14 +133,6 @@ export default function ShopPage() {
     const brands = products.map(p => p.brand).filter(Boolean) as string[]
     return [...new Set(brands)].sort()
   }, [products])
-
-  // Default types list used as fallback when products have no type field
-  const DEFAULT_PRODUCT_TYPES = [
-    "T-Shirt", "Shirt", "Pants", "Jeans", "Shorts",
-    "Jacket", "Coat", "Hoodie", "Sweater",
-    "Dress", "Skirt", "Blouse",
-    "Belt", "Shoes", "Bag", "Accessory"
-  ]
 
   // Derive unique types from loaded products, fall back to default list
   const availableTypes = useMemo(() => {
@@ -231,28 +239,16 @@ export default function ShopPage() {
                     className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                   >
                     <AnimatePresence mode="popLayout">
-                      {filteredProducts.map((product: any, index: number) => (
+                      {filteredProducts.map((product, index: number) => (
                         <motion.div
-                          key={product._id || product.id}
+                          key={product.id}
                           layout
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, scale: 0.95 }}
                           transition={{ duration: 0.4, delay: index * 0.03, ease: [0.16, 1, 0.3, 1] }}
                         >
-                          <ProductCard product={{
-                        id: product._id || product.id || "",
-                        name: product.name,
-                        brand: product.brand || "Fashion Brand",
-                        price: product.price,
-                        category: product.category,
-                        sizes: product.sizes || [],
-                        colors: product.colors || [],
-                        image: product.image || "",
-                        images: product.images || [product.image],
-                        description: product.description || "",
-                        inStock: product.inStock !== false,
-                        }} />
+                          <ProductCard product={product} />
                         </motion.div>
                       ))}
                     </AnimatePresence>

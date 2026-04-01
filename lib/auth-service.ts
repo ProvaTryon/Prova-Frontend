@@ -180,7 +180,8 @@ export const getGoogleToken = async (): Promise<
 export const getGoogleIdToken = async (): Promise<string> => {
   const result = await getGoogleToken();
   if (result.idToken) return result.idToken;
-  return result.accessToken;
+  if (result.accessToken) return result.accessToken;
+  throw new Error('Google authentication did not return a token');
 };
 
 /**

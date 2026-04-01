@@ -34,6 +34,7 @@ export interface ProfileData {
   googleId?: string;
   profileImage?: string;
   tryonImage?: string;
+  tryonSideImage?: string;
   isActive: boolean;
   lastLogin?: string;
   createdAt?: string;
@@ -47,6 +48,7 @@ export interface UpdateProfilePayload {
   birth_date?: string;
   profileImage?: string;
   tryonImage?: string;
+  tryonSideImage?: string;
 }
 
 interface ApiResponse<T> {

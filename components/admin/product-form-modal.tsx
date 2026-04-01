@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ImageUpload, MultiImageUpload, type UploadedImage } from "@/components/ui/image-upload"
-import type { Product } from "@/lib/product-service"
+import type { Product, SizeMeasurementChartEntry } from "@/lib/product-service"
 
 // ── Preset Options ──
 const CATEGORIES = [
@@ -42,6 +42,21 @@ const PRESET_COLORS = [
   { name: "Burgundy", hex: "#800020" },
   { name: "Olive", hex: "#808000" },
 ]
+
+const PRESET_COLOR_CLASSES: Record<string, string> = {
+  "#000000": "bg-black",
+  "#ffffff": "bg-white",
+  "#1e3a5f": "bg-slate-800",
+  "#dc2626": "bg-red-600",
+  "#d4b896": "bg-amber-200",
+  "#6b7280": "bg-gray-500",
+  "#8b4513": "bg-amber-800",
+  "#ec4899": "bg-pink-500",
+  "#3b82f6": "bg-blue-500",
+  "#22c55e": "bg-green-500",
+  "#800020": "bg-rose-900",
+  "#808000": "bg-lime-700",
+}
 
 const GENDERS = [
   { id: "male", label: "Male" },
@@ -88,8 +103,7 @@ function ChipToggle({
     >
       {colorHex && (
         <span
-          className="w-3 h-3 rounded-full border border-black/10 shrink-0"
-          style={{ backgroundColor: colorHex }}
+          className={`w-3 h-3 rounded-full border border-black/10 shrink-0 ${PRESET_COLOR_CLASSES[colorHex.toLowerCase()] || 'bg-muted'}`}
         />
       )}
       {label}
@@ -196,6 +210,7 @@ export function ProductFormModal({
   const [customMaterials, setCustomMaterials] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
   const [customTags, setCustomTags] = useState<string[]>([])
+  const [sizeMeasurementChart, setSizeMeasurementChart] = useState<SizeMeasurementChartEntry[]>([])
 
   // ── Images ──
   const [mainImage, setMainImage] = useState<UploadedImage | null>(null)
@@ -223,7 +238,7 @@ export function ProductFormModal({
       setSelectedCategories(cats.length > 0 ? cats : ["women"])
 
       // Type
-      const type = (product as any).type || ""
+      const type = product.type || ""
       const types = type.split(",").map((t: string) => t.trim()).filter(Boolean)
       setSelectedTypes(types)
 
@@ -236,33 +251,36 @@ export function ProductFormModal({
       setCustomColors(productColors.filter((c) => !presetColorNames.includes(c)))
 
       // Gender
-      const gender = (product as any).gender || "unisex"
+      const gender = product.gender || "unisex"
       setSelectedGenders(gender.split(",").map((g: string) => g.trim()).filter(Boolean))
 
       // Materials
-      const material = (product as any).material || ""
+      const material = product.material || ""
       const mats = material.split(",").map((m: string) => m.trim()).filter(Boolean)
       setSelectedMaterials(mats.filter((m: string) => PRESET_MATERIALS.includes(m)))
       setCustomMaterials(mats.filter((m: string) => !PRESET_MATERIALS.includes(m)))
 
       // Tags
-      const tags = (product as any).tags || []
+      const tags = product.tags || []
       const presetTagLabels = PRESET_TAGS.map((t) => t.toLowerCase())
       setSelectedTags(tags.filter((t: string) => presetTagLabels.includes(t.toLowerCase())))
       setCustomTags(tags.filter((t: string) => !presetTagLabels.includes(t.toLowerCase())))
+
+      // Size chart
+      setSizeMeasurementChart(product.sizeMeasurementChart || [])
 
       // Images
       if (product.image) {
         setMainImage({
           secure_url: product.image,
-          public_id: (product as any).imagePublicId || "",
+          public_id: product.imagePublicId || "",
         })
       } else {
         setMainImage(null)
       }
 
       if (product.images && product.images.length > 0) {
-        const publicIds: string[] = (product as any).imagePublicIds || []
+        const publicIds: string[] = product.imagePublicIds || []
         setAdditionalImages(
           product.images.map((url, i) => ({
             secure_url: url,
@@ -293,10 +311,53 @@ export function ProductFormModal({
       setCustomMaterials([])
       setSelectedTags([])
       setCustomTags([])
+      setSizeMeasurementChart([])
       setMainImage(null)
       setAdditionalImages([])
     }
   }, [product, isOpen, userName])
+
+  // Keep size measurement chart aligned with selected size list.
+  useEffect(() => {
+    setSizeMeasurementChart((prev) => {
+      const bySize = new Map(prev.map((entry) => [entry.size.toUpperCase(), entry]))
+      return selectedSizes.map((size) => {
+        const existing = bySize.get(size.toUpperCase())
+        return existing ? { ...existing, size } : { size }
+      })
+    })
+  }, [selectedSizes])
+
+  const updateSizeChartEntry = useCallback(
+    (
+      size: string,
+      key: keyof Omit<SizeMeasurementChartEntry, "size">,
+      raw: string,
+    ) => {
+      setSizeMeasurementChart((prev) =>
+        prev.map((entry) => {
+          if (entry.size !== size) return entry
+
+          if (!raw.trim()) {
+            const rest = { ...entry }
+            delete rest[key]
+            return rest
+          }
+
+          const parsed = Number(raw)
+          if (!Number.isFinite(parsed)) {
+            return entry
+          }
+
+          return {
+            ...entry,
+            [key]: parsed,
+          }
+        }),
+      )
+    },
+    [],
+  )
 
   // ── Submit ──
   const handleSubmit = (e: React.FormEvent) => {
@@ -338,6 +399,7 @@ export function ProductFormModal({
       material: allMaterials.join(","),
       tags: allTags,
       merchantName,
+      sizeMeasurementChart,
     }
 
     onSubmit(productData as Product)
@@ -355,7 +417,12 @@ export function ProductFormModal({
             <h2 className="font-serif text-2xl font-semibold">{product ? "Edit Product" : "Add New Product"}</h2>
             <p className="text-xs text-muted-foreground mt-1">Fill in the details below to {product ? "update" : "create"} your product</p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-muted rounded-xl transition-colors">
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-muted rounded-xl transition-colors"
+            aria-label="Close product form"
+            title="Close"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -396,6 +463,8 @@ export function ProductFormModal({
                   id="brand"
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
+                  aria-label="Brand"
+                  title="Brand"
                   className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm mt-1"
                   required
                 >
@@ -524,6 +593,90 @@ export function ProductFormModal({
                 />
               ))}
             </div>
+          </FormSection>
+
+          {/* ═══ Size Measurement Chart ═══ */}
+          <FormSection title="Size Measurement Chart (cm)">
+            {sizeMeasurementChart.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Select at least one size to configure comparable body measurement ranges.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  Add min/max ranges for chest, waist, and hip to enable measurement-based recommendations.
+                </p>
+                <div className="space-y-3">
+                  {sizeMeasurementChart.map((entry) => (
+                    <div key={entry.size} className="rounded-lg border border-border/60 p-3">
+                      <p className="text-xs font-semibold mb-2">Size {entry.size}</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Chest min"
+                          value={entry.chestMin ?? ""}
+                          onChange={(e) =>
+                            updateSizeChartEntry(entry.size, "chestMin", e.target.value)
+                          }
+                          className="h-8 text-xs"
+                        />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Chest max"
+                          value={entry.chestMax ?? ""}
+                          onChange={(e) =>
+                            updateSizeChartEntry(entry.size, "chestMax", e.target.value)
+                          }
+                          className="h-8 text-xs"
+                        />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Waist min"
+                          value={entry.waistMin ?? ""}
+                          onChange={(e) =>
+                            updateSizeChartEntry(entry.size, "waistMin", e.target.value)
+                          }
+                          className="h-8 text-xs"
+                        />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Waist max"
+                          value={entry.waistMax ?? ""}
+                          onChange={(e) =>
+                            updateSizeChartEntry(entry.size, "waistMax", e.target.value)
+                          }
+                          className="h-8 text-xs"
+                        />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Hip min"
+                          value={entry.hipMin ?? ""}
+                          onChange={(e) =>
+                            updateSizeChartEntry(entry.size, "hipMin", e.target.value)
+                          }
+                          className="h-8 text-xs"
+                        />
+                        <Input
+                          type="number"
+                          step="0.1"
+                          placeholder="Hip max"
+                          value={entry.hipMax ?? ""}
+                          onChange={(e) =>
+                            updateSizeChartEntry(entry.size, "hipMax", e.target.value)
+                          }
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </FormSection>
 
           {/* ═══ Colors ═══ */}

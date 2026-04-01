@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { fetchProfile, updateProfile } from "@/lib/profile-service"
+import { refreshMeasurementsFromProfile } from "@/lib/measurement-service"
 import { processTryOn, urlToFile, revokeObjectURL, processVton360TryOn, getVtonModel, validateImageFile } from "@/lib/vton-service"
 import {
   Dialog,
@@ -37,15 +38,31 @@ function sanitizeError(msg?: string): string {
   return msg
 }
 
+function getErrorMessage(error: unknown): string | undefined {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const maybeMessage = (error as { message?: unknown }).message
+    return typeof maybeMessage === "string" ? maybeMessage : undefined
+  }
+
+  return undefined
+}
+
 export function TryOnDialog({ open, onOpenChange, productImage, productName, productCategory }: TryOnDialogProps) {
   const t = useTranslations("productDetail")
-  const { user, logout } = useAuth()
+  const { logout } = useAuth()
   const { toast } = useToast()
 
   const [step, setStep] = useState<Step>("loading")
   const [savedImageUrl, setSavedImageUrl] = useState<string | null>(null)
+  const [savedSideImageUrl, setSavedSideImageUrl] = useState<string | null>(null)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadPreview, setUploadPreview] = useState<string | null>(null)
+  const [uploadedSideFile, setUploadedSideFile] = useState<File | null>(null)
+  const [sideUploadPreview, setSideUploadPreview] = useState<string | null>(null)
   const [saveToProfile, setSaveToProfile] = useState(true)
   const [resultUrl, setResultUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -58,9 +75,10 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
       return () => {
         if (resultUrl) revokeObjectURL(resultUrl)
         if (uploadPreview) revokeObjectURL(uploadPreview)
+        if (sideUploadPreview) revokeObjectURL(sideUploadPreview)
       }
     }
-  }, [open, resultUrl, uploadPreview])
+  }, [open, resultUrl, uploadPreview, sideUploadPreview])
 
   // Reset state and fetch profile when dialog opens
   useEffect(() => {
@@ -69,6 +87,8 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
     setStep("loading")
     setUploadedFile(null)
     setUploadPreview(null)
+    setUploadedSideFile(null)
+    setSideUploadPreview(null)
     setResultUrl(null)
     setError(null)
     setSaveToProfile(true)
@@ -78,14 +98,17 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
         const profile = await fetchProfile()
         if (profile.tryonImage) {
           setSavedImageUrl(profile.tryonImage)
+          setSavedSideImageUrl(profile.tryonSideImage || null)
           setStep("saved")
         } else {
           setSavedImageUrl(null)
+          setSavedSideImageUrl(null)
           setStep("upload")
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const message = getErrorMessage(err)?.toLowerCase() || ""
         // Auth error → token expired/invalid — block the entire flow
-        if (err.message?.includes("401") || err.message?.toLowerCase().includes("unauthorized") || err.message?.toLowerCase().includes("expired")) {
+        if (message.includes("401") || message.includes("unauthorized") || message.includes("expired")) {
           logout()
           setError(t("tryOn.loginRequired"))
           setStep("auth-error")
@@ -93,12 +116,13 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
         }
         // Other errors (network, etc.) → still allow upload
         setSavedImageUrl(null)
+        setSavedSideImageUrl(null)
         setStep("upload")
       }
     }
 
     loadProfile()
-  }, [open])
+  }, [open, logout, t])
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -120,6 +144,28 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
     setUploadedFile(file)
     const preview = URL.createObjectURL(file)
     setUploadPreview(preview)
+  }, [t])
+
+  const handleSideFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError(t("tryOn.fileTooLarge"))
+      return
+    }
+
+    try {
+      validateImageFile(file)
+    } catch {
+      setError(t("tryOn.invalidFileType") || "Invalid file type. Please upload JPEG, PNG, or WebP.")
+      return
+    }
+
+    setError(null)
+    setUploadedSideFile(file)
+    const preview = URL.createObjectURL(file)
+    setSideUploadPreview(preview)
   }, [t])
 
   const uploadToCloudinary = async (file: File): Promise<string> => {
@@ -153,11 +199,11 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
       }
       setResultUrl(result)
       setStep("result")
-    } catch (err: any) {
-      if (err.name === "AbortError") {
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") {
         setError(t("tryOn.timeout"))
       } else {
-        setError(sanitizeError(err.message) || t("tryOn.processingFailed"))
+        setError(sanitizeError(getErrorMessage(err)) || t("tryOn.processingFailed"))
       }
       setStep(savedImageUrl ? "saved" : "upload")
     } finally {
@@ -171,8 +217,8 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
     try {
       const file = await urlToFile(savedImageUrl, "person.jpg")
       await runTryOn(file)
-    } catch (err: any) {
-      setError(sanitizeError(err.message) || t("tryOn.processingFailed"))
+    } catch (err: unknown) {
+      setError(sanitizeError(getErrorMessage(err)) || t("tryOn.processingFailed"))
     }
   }, [savedImageUrl, runTryOn, t])
 
@@ -182,20 +228,42 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
     try {
       // Save to profile if checkbox is checked
       if (saveToProfile) {
+        if (!uploadedSideFile) {
+          setError(t("tryOn.sideImageRequired") || "Please upload a side profile image to save measurements.")
+          return
+        }
+
         try {
-          const cloudUrl = await uploadToCloudinary(uploadedFile)
-          await updateProfile({ tryonImage: cloudUrl })
-          setSavedImageUrl(cloudUrl)
+          const [frontCloudUrl, sideCloudUrl] = await Promise.all([
+            uploadToCloudinary(uploadedFile),
+            uploadToCloudinary(uploadedSideFile),
+          ])
+
+          await updateProfile({
+            tryonImage: frontCloudUrl,
+            tryonSideImage: sideCloudUrl,
+          })
+          setSavedImageUrl(frontCloudUrl)
+          setSavedSideImageUrl(sideCloudUrl)
+
+          // Trigger measurements refresh without blocking virtual try-on flow.
+          refreshMeasurementsFromProfile({ engine: "mediapipe" }).catch(() => {
+            toast({
+              title: t("tryOn.measurementRefreshFailed") || "Size recommendation update failed",
+              description: t("tryOn.measurementRefreshFailedDesc") || "Please retry from your profile later.",
+              variant: "destructive",
+            })
+          })
         } catch {
           // Profile save failed (e.g. expired token) — continue with try-on anyway
         }
       }
 
       await runTryOn(uploadedFile)
-    } catch (err: any) {
-      setError(sanitizeError(err.message) || t("tryOn.uploadFailed"))
+    } catch (err: unknown) {
+      setError(sanitizeError(getErrorMessage(err)) || t("tryOn.uploadFailed"))
     }
-  }, [uploadedFile, saveToProfile, runTryOn, t])
+  }, [uploadedFile, uploadedSideFile, saveToProfile, runTryOn, t, toast])
 
   const handleDownload = useCallback(() => {
     if (!resultUrl) return
@@ -258,6 +326,11 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
             <div className="relative aspect-[3/4] max-h-64 mx-auto overflow-hidden rounded-lg bg-muted">
               <Image src={savedImageUrl} alt="Saved photo" fill className="object-cover" />
             </div>
+            {!savedSideImageUrl && (
+              <p className="text-xs text-amber-600 text-center">
+                {t("tryOn.sideImageMissing") || "Add a side profile image while saving a new photo to unlock size recommendations."}
+              </p>
+            )}
             <div className="flex flex-col gap-2">
               <Button
                 onClick={handleUseSavedImage}
@@ -320,6 +393,46 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
               />
               {t("tryOn.saveForFuture")}
             </label>
+
+            {saveToProfile && (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  {t("tryOn.sideImageHint") || "A side profile photo is required to generate accurate size recommendations."}
+                </p>
+                <div className="relative aspect-[3/4] max-h-64 mx-auto border-2 border-dashed border-border rounded-lg overflow-hidden bg-muted hover:border-primary transition-colors">
+                  {sideUploadPreview ? (
+                    <Image src={sideUploadPreview} alt="Uploaded side profile" fill className="object-cover" />
+                  ) : (
+                    <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer">
+                      <Upload className="w-10 h-10 text-muted-foreground mb-3" />
+                      <p className="text-sm font-medium">
+                        {t("tryOn.sideClickToUpload") || "Click to upload side profile photo"}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("tryOn.fileRequirements")}</p>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleSideFileSelect}
+                        className="hidden"
+                      />
+                    </label>
+                  )}
+                </div>
+
+                {sideUploadPreview && (
+                  <button
+                    onClick={() => {
+                      if (sideUploadPreview) revokeObjectURL(sideUploadPreview)
+                      setUploadedSideFile(null)
+                      setSideUploadPreview(null)
+                    }}
+                    className="text-sm text-muted-foreground hover:text-foreground underline"
+                  >
+                    {t("tryOn.removeSidePhoto") || "Remove side photo"}
+                  </button>
+                )}
+              </div>
+            )}
 
             <Button
               onClick={handleSubmitUpload}

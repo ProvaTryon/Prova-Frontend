@@ -113,6 +113,7 @@ export default function StoreOwnerProducts() {
         gender: (productData as any).gender || 'unisex',
         material: (productData as any).material || 'Cotton',
         tags: (productData as any).tags || [],
+        sizeMeasurementChart: productData.sizeMeasurementChart || [],
         merchant: String(user.id),
         merchantName: user?.name || productData.merchantName || undefined,
       }

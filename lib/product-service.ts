@@ -6,6 +6,20 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+export interface SizeMeasurementChartEntry {
+    size: string
+    chestMin?: number
+    chestMax?: number
+    waistMin?: number
+    waistMax?: number
+    hipMin?: number
+    hipMax?: number
+    shoulderMin?: number
+    shoulderMax?: number
+    inseamMin?: number
+    inseamMax?: number
+}
+
 // ==========================================
 // 📦 Product Type Definition
 // ==========================================
@@ -35,6 +49,47 @@ export interface Product {
     material?: string
     tags?: string[]
     gender?: string
+    sizeMeasurementChart?: SizeMeasurementChartEntry[]
+    matchedSize?: string
+    recommendedSize?: string
+}
+
+interface BackendProductPayload {
+    _id?: string
+    id?: string
+    name?: string
+    brand?: string
+    price?: number
+    salePrice?: number
+    category?: string
+    type?: string
+    sizes?: string[]
+    colors?: string[]
+    image?: string
+    images?: string[]
+    imagePublicId?: string
+    imagePublicIds?: string[]
+    description?: string
+    inStock?: boolean
+    stock?: number
+    rating?: number
+    reviews?: number
+    createdAt?: string
+    merchantName?: string
+    merchant?: { name?: string } | string
+    material?: string
+    tags?: string[]
+    gender?: string
+    sizeMeasurementChart?: SizeMeasurementChartEntry[]
+    matchedSize?: string
+    recommendedSize?: string
+}
+
+interface ApiErrorPayload {
+    error?: string
+    msg?: string
+    message?: string
+    errors?: Array<{ message?: string; msg?: string }>
 }
 
 // ==========================================
@@ -65,7 +120,7 @@ const sanitizeImageUrl = (url: string | undefined | null): string => {
 // ==========================================
 // 🔄 Transform backend product to frontend format
 // ==========================================
-const transformProduct = (backendProduct: any): Product => {
+const transformProduct = (backendProduct: BackendProductPayload): Product => {
     const rawImages: string[] = (backendProduct.images || []).map(sanitizeImageUrl).filter(Boolean);
     const mainImage = sanitizeImageUrl(backendProduct.images?.[0])
         || sanitizeImageUrl(backendProduct.image)
@@ -78,7 +133,7 @@ const transformProduct = (backendProduct: any): Product => {
     }
 
     return {
-        id: backendProduct._id || backendProduct.id,
+        id: backendProduct._id || backendProduct.id || '',
         name: backendProduct.name || '',
         brand: backendProduct.brand || '',
         price: backendProduct.price || 0,
@@ -92,7 +147,7 @@ const transformProduct = (backendProduct: any): Product => {
         imagePublicId: backendProduct.imagePublicId || '',
         imagePublicIds: backendProduct.imagePublicIds || [],
         description: backendProduct.description || '',
-        inStock: backendProduct.stock > 0 || backendProduct.inStock || false,
+        inStock: (backendProduct.stock ?? 0) > 0 || backendProduct.inStock || false,
         stock: backendProduct.stock,
         rating: backendProduct.rating,
         reviews: backendProduct.reviews,
@@ -101,6 +156,9 @@ const transformProduct = (backendProduct: any): Product => {
         material: backendProduct.material || '',
         tags: backendProduct.tags || [],
         gender: backendProduct.gender || '',
+        sizeMeasurementChart: backendProduct.sizeMeasurementChart || [],
+        matchedSize: backendProduct.matchedSize,
+        recommendedSize: backendProduct.recommendedSize,
     };
 };
 
@@ -227,7 +285,7 @@ export const getProductsByMerchant = async (merchantId: string): Promise<Product
 // ==========================================
 // ➕ إنشاء منتج جديد (Admin/Merchant only)
 // ==========================================
-export const createProduct = async (productData: any) => {
+export const createProduct = async (productData: Record<string, unknown>) => {
     try {
         const token = localStorage.getItem('authToken');
 
@@ -246,13 +304,13 @@ export const createProduct = async (productData: any) => {
         console.log('📥 Create response status:', response.status);
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            const errorData = (await response.json().catch(() => ({}))) as ApiErrorPayload;
             console.error('❌ Create product error:', errorData);
 
             // Handle validation errors
             let errorMessage = errorData.error || errorData.msg || errorData.message || `Failed to create product (${response.status})`;
             if (errorData.errors && Array.isArray(errorData.errors)) {
-                const validationErrors = errorData.errors.map((e: any) => e.message || e.msg || JSON.stringify(e)).join(', ');
+                const validationErrors = errorData.errors.map((e) => e.message || e.msg || JSON.stringify(e)).join(', ');
                 errorMessage = `Validation error: ${validationErrors}`;
             }
             throw new Error(errorMessage);
@@ -270,7 +328,7 @@ export const createProduct = async (productData: any) => {
 // ==========================================
 // ✏️ تعديل منتج (Admin/Merchant only)
 // ==========================================
-export const updateProduct = async (productId: string, productData: any) => {
+export const updateProduct = async (productId: string, productData: Record<string, unknown>) => {
     try {
         const token = localStorage.getItem('authToken');
 
@@ -289,13 +347,13 @@ export const updateProduct = async (productId: string, productData: any) => {
         console.log('📥 Update response status:', response.status);
 
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            const errorData = (await response.json().catch(() => ({}))) as ApiErrorPayload;
             console.error('❌ Update product error:', errorData);
 
             // Handle validation errors
             let errorMessage = errorData.error || errorData.msg || errorData.message || `Failed to update product (${response.status})`;
             if (errorData.errors && Array.isArray(errorData.errors)) {
-                const validationErrors = errorData.errors.map((e: any) => e.message || e.msg || JSON.stringify(e)).join(', ');
+                const validationErrors = errorData.errors.map((e) => e.message || e.msg || JSON.stringify(e)).join(', ');
                 errorMessage = `Validation error: ${validationErrors}`;
             }
             throw new Error(errorMessage);
@@ -325,7 +383,7 @@ export const deleteProduct = async (productId: string) => {
         });
 
         if (!response.ok) {
-            const error = await response.json();
+            const error = (await response.json().catch(() => ({}))) as { message?: string };
             throw new Error(error.message || 'فشل حذف المنتج');
         }
 

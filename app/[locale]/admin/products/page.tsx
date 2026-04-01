@@ -65,6 +65,7 @@ export default function ProductsManagement() {
         gender: product.gender || 'unisex',
         material: product.material || 'Cotton',
         tags: product.tags || ['fashion'],
+        sizeMeasurementChart: product.sizeMeasurementChart || [],
         merchantName: product.merchantName || undefined,
       }
       await productService.createProduct(backendData)
@@ -96,6 +97,7 @@ export default function ProductsManagement() {
         gender: product.gender || undefined,
         material: product.material || undefined,
         tags: product.tags?.length ? product.tags : undefined,
+        sizeMeasurementChart: product.sizeMeasurementChart || [],
         merchantName: product.merchantName || undefined,
         salePrice: product.salePrice || undefined,
       }

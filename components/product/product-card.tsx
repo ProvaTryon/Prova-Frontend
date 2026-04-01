@@ -96,6 +96,18 @@ export function ProductCard({ product }: ProductCardProps) {
               </span>
             )}
           </div>
+
+          <div className="pt-1">
+            {product.recommendedSize ? (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 no-flip">
+                {t('recommendedSize') || 'Recommended'}: {product.recommendedSize}
+              </span>
+            ) : (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-muted text-muted-foreground no-flip">
+                {t('noRecommendedSize') || 'No recommendation yet'}
+              </span>
+            )}
+          </div>
         </div>
       </Link>
 
