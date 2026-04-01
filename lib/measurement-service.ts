@@ -269,20 +269,28 @@ export function getRecommendedSizeForProduct(
   }
 
   const axis = resolveAxis(product)
-  if (!axis) return null
-
   const chart = product.sizeMeasurementChart || []
 
-  if (chart.length > 0 && sizes.length > 0) {
+  if (axis && chart.length > 0 && sizes.length > 0) {
     const matched = findMatchingSizeByChart(chart, sizes, axis, measurement)
     if (matched) return findAvailableSizeMatch(sizes, matched)
   }
 
-  // Fallback to AI size recommendation only if it exists in available product sizes.
-  const fallback =
-    axis === 'top'
-      ? measurement.size_recommendation?.top
-      : measurement.size_recommendation?.bottom
+  // Fallback to AI recommendation when chart matching is unavailable,
+  // including products with categories that do not map cleanly to top/bottom.
+  const topFallback = measurement.size_recommendation?.top
+  const bottomFallback = measurement.size_recommendation?.bottom
 
-  return findAvailableSizeMatch(sizes, fallback)
+  if (axis === 'top') {
+    return findAvailableSizeMatch(sizes, topFallback)
+  }
+
+  if (axis === 'bottom') {
+    return findAvailableSizeMatch(sizes, bottomFallback)
+  }
+
+  return (
+    findAvailableSizeMatch(sizes, topFallback) ??
+    findAvailableSizeMatch(sizes, bottomFallback)
+  )
 }
