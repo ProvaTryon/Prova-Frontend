@@ -30,6 +30,7 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { getMyOrders } from "@/lib/order-service"
+import { refreshMeasurementsFromProfile } from "@/lib/measurement-service"
 import Link from "next/link"
 
 import {
@@ -532,12 +533,21 @@ export default function ProfilePage() {
     try {
       setSavingTryonSettings(true)
 
+      const currentFrontTryonImage = profile?.tryonImage || ""
+      const currentSideTryonImage = profile?.tryonSideImage || ""
+      const nextFrontTryonImage = settingsFrontTryonImage?.secure_url || ""
+      const nextSideTryonImage = settingsSideTryonImage?.secure_url || ""
+
+      const imagesChanged =
+        currentFrontTryonImage !== nextFrontTryonImage ||
+        currentSideTryonImage !== nextSideTryonImage
+
       const payload: Record<string, string> = {}
-      if (settingsFrontTryonImage?.secure_url) {
-        payload.tryonImage = settingsFrontTryonImage.secure_url
+      if (nextFrontTryonImage) {
+        payload.tryonImage = nextFrontTryonImage
       }
-      if (settingsSideTryonImage?.secure_url) {
-        payload.tryonSideImage = settingsSideTryonImage.secure_url
+      if (nextSideTryonImage) {
+        payload.tryonSideImage = nextSideTryonImage
       }
 
       if (!payload.tryonImage && !payload.tryonSideImage) {
@@ -569,10 +579,43 @@ export default function ProfilePage() {
           : null,
       )
 
-      toast({
-        title: t("success"),
-        description: t("tryonSettingsSaved"),
-      })
+      let measurementRefreshFailed = false
+      let measurementRefreshSkipped = false
+
+      if (imagesChanged) {
+        if (updated.tryonImage && updated.tryonSideImage) {
+          try {
+            await refreshMeasurementsFromProfile({ engine: "mediapipe" })
+          } catch {
+            measurementRefreshFailed = true
+          }
+        } else {
+          measurementRefreshSkipped = true
+        }
+      }
+
+      if (measurementRefreshFailed) {
+        toast({
+          variant: "destructive",
+          title: t("error"),
+          description: t("measurementRefreshFailed"),
+        })
+      } else if (measurementRefreshSkipped) {
+        toast({
+          title: t("success"),
+          description: t("measurementRefreshSkipped"),
+        })
+      } else if (imagesChanged) {
+        toast({
+          title: t("success"),
+          description: t("tryonSettingsSavedAndMeasured"),
+        })
+      } else {
+        toast({
+          title: t("success"),
+          description: t("tryonSettingsSaved"),
+        })
+      }
     } catch (err) {
       toast({
         variant: "destructive",
