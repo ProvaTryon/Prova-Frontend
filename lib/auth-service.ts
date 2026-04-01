@@ -288,6 +288,8 @@ export const register = async (userData: {
   companyName?: string;
   companyId?: string;
   nationalId?: string;
+  tryonImage?: string;
+  tryonSideImage?: string;
 }) => {
   try {
     // Log what we're sending to backend
@@ -317,7 +319,7 @@ export const register = async (userData: {
 
       if (data.errors && Array.isArray(data.errors)) {
         const errorDetails = data.errors
-          .map((err: any) => err.message || err.msg)
+          .map((err: { message?: string; msg?: string }) => err.message || err.msg)
           .filter(Boolean)
           .join(', ');
         if (errorDetails) {

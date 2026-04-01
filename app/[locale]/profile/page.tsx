@@ -48,6 +48,7 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { motion, AnimatePresence } from "framer-motion"
+import { ImageUpload, type UploadedImage } from "@/components/ui/image-upload"
 
 // ── Zod schema for profile form ──
 const profileFormSchema = z.object({
@@ -81,6 +82,27 @@ const passwordSchema = z
   })
 
 type PasswordFormValues = z.infer<typeof passwordSchema>
+
+interface OrderProductSummary {
+  image?: string
+  name?: string
+}
+
+interface OrderItemSummary {
+  product?: OrderProductSummary
+  quantity?: number
+}
+
+interface OrderListItem {
+  _id: string
+  status?: string
+  createdAt?: string
+  items?: OrderItemSummary[]
+  products?: unknown[]
+  totalAmount?: number
+  total?: number
+  totalPrice?: number
+}
 
 // ── Role badge mapping ──
 const roleBadgeVariant: Record<
@@ -120,7 +142,6 @@ function ProfileHeader({
   role,
   provider,
   profileImage,
-  lastLogin,
   updatedAt,
   loading,
 }: {
@@ -129,7 +150,6 @@ function ProfileHeader({
   role: string
   provider: string
   profileImage?: string
-  lastLogin?: string
   updatedAt?: string
   loading: boolean
 }) {
@@ -380,9 +400,12 @@ export default function ProfilePage() {
   const { toast } = useToast()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("profile")
-  const [orders, setOrders] = useState<any[]>([])
+  const [orders, setOrders] = useState<OrderListItem[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [ordersError, setOrdersError] = useState("")
+  const [settingsFrontTryonImage, setSettingsFrontTryonImage] = useState<UploadedImage | null>(null)
+  const [settingsSideTryonImage, setSettingsSideTryonImage] = useState<UploadedImage | null>(null)
+  const [savingTryonSettings, setSavingTryonSettings] = useState(false)
 
   const {
     profile,
@@ -424,6 +447,28 @@ export default function ProfilePage() {
     }
   }, [profile, form])
 
+  useEffect(() => {
+    if (!profile) return
+
+    setSettingsFrontTryonImage(
+      profile.tryonImage
+        ? {
+            secure_url: profile.tryonImage,
+            public_id: "",
+          }
+        : null,
+    )
+
+    setSettingsSideTryonImage(
+      profile.tryonSideImage
+        ? {
+            secure_url: profile.tryonSideImage,
+            public_id: "",
+          }
+        : null,
+    )
+  }, [profile?.tryonImage, profile?.tryonSideImage, profile])
+
   // Show error toast
   useEffect(() => {
     if (profileError) {
@@ -442,7 +487,7 @@ export default function ProfilePage() {
       setOrdersLoading(true)
       setOrdersError("")
       const data = await getMyOrders()
-      setOrders(Array.isArray(data) ? data : [])
+      setOrders(Array.isArray(data) ? (data as OrderListItem[]) : [])
     } catch (err) {
       setOrdersError((err as Error).message || "Failed to load orders")
     } finally {
@@ -483,7 +528,65 @@ export default function ProfilePage() {
     }
   }
 
+  const onSaveTryonSettings = async () => {
+    try {
+      setSavingTryonSettings(true)
+
+      const payload: Record<string, string> = {}
+      if (settingsFrontTryonImage?.secure_url) {
+        payload.tryonImage = settingsFrontTryonImage.secure_url
+      }
+      if (settingsSideTryonImage?.secure_url) {
+        payload.tryonSideImage = settingsSideTryonImage.secure_url
+      }
+
+      if (!payload.tryonImage && !payload.tryonSideImage) {
+        toast({
+          variant: "destructive",
+          title: t("error"),
+          description: t("tryonNoImageSelected"),
+        })
+        return
+      }
+
+      const updated = await updateProfileData(payload)
+
+      setSettingsFrontTryonImage(
+        updated.tryonImage
+          ? {
+              secure_url: updated.tryonImage,
+              public_id: "",
+            }
+          : null,
+      )
+
+      setSettingsSideTryonImage(
+        updated.tryonSideImage
+          ? {
+              secure_url: updated.tryonSideImage,
+              public_id: "",
+            }
+          : null,
+      )
+
+      toast({
+        title: t("success"),
+        description: t("tryonSettingsSaved"),
+      })
+    } catch (err) {
+      toast({
+        variant: "destructive",
+        title: t("error"),
+        description: (err as Error).message || t("updateFailed"),
+      })
+    } finally {
+      setSavingTryonSettings(false)
+    }
+  }
+
   if (!isAuthenticated) return null
+
+  const showTryonSettings = profile?.role === "user" || user?.role === "customer"
 
   const tabs = [
     { id: "profile", label: t("profile"), icon: User },
@@ -561,7 +664,6 @@ export default function ProfilePage() {
                         role={profile?.role || "user"}
                         provider={profile?.provider || "local"}
                         profileImage={profile?.profileImage}
-                        lastLogin={profile?.lastLogin}
                         updatedAt={profile?.updatedAt}
                         loading={loading}
                       />
@@ -802,7 +904,7 @@ export default function ProfilePage() {
                         !ordersError &&
                         orders.length > 0 && (
                           <div className="space-y-3">
-                            {orders.map((order: any) => {
+                            {orders.map((order) => {
                               const statusConfig: Record<
                                 string,
                                 {
@@ -849,11 +951,11 @@ export default function ProfilePage() {
                                     t("statusCancelled") || "Cancelled",
                                 },
                               }
+                              const statusKey = order.status ?? "pending"
                               const status =
-                                statusConfig[order.status] ||
-                                statusConfig.pending
+                                statusConfig[statusKey] || statusConfig.pending
                               const orderDate = new Date(
-                                order.createdAt,
+                                order.createdAt ?? Date.now(),
                               ).toLocaleDateString(undefined, {
                                 year: "numeric",
                                 month: "short",
@@ -890,7 +992,7 @@ export default function ProfilePage() {
                                     <div className="flex gap-3 mb-3 overflow-x-auto pb-1">
                                       {order.items
                                         .slice(0, 4)
-                                        .map((item: any, idx: number) => (
+                                        .map((item: OrderItemSummary, idx: number) => (
                                           <div
                                             key={idx}
                                             className="flex items-center gap-2 flex-shrink-0"
@@ -1063,6 +1165,48 @@ export default function ProfilePage() {
                             </span>
                           </label>
                         </div>
+
+                        {showTryonSettings && (
+                          <>
+                            <Separator />
+                            <div className="space-y-4">
+                              <div>
+                                <h3 className="text-sm font-medium">{t("tryonSettingsTitle")}</h3>
+                                <p className="text-xs text-muted-foreground mt-1">{t("tryonSettingsHint")}</p>
+                              </div>
+
+                              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <ImageUpload
+                                  value={settingsFrontTryonImage}
+                                  onChange={setSettingsFrontTryonImage}
+                                  uploadType="user"
+                                  label={t("tryonFrontImage")}
+                                />
+                                <ImageUpload
+                                  value={settingsSideTryonImage}
+                                  onChange={setSettingsSideTryonImage}
+                                  uploadType="user"
+                                  label={t("tryonSideImage")}
+                                />
+                              </div>
+
+                              <Button
+                                type="button"
+                                onClick={onSaveTryonSettings}
+                                disabled={savingTryonSettings}
+                              >
+                                {savingTryonSettings ? (
+                                  <span className="flex items-center gap-2">
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    {t("saving")}
+                                  </span>
+                                ) : (
+                                  t("tryonSave")
+                                )}
+                              </Button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </motion.div>
                   )}

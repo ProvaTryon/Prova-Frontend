@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import cloudinary, { PRODUCT_FOLDER, USER_FOLDER } from "@/lib/cloudinary"
 
-export const runtime = 'edge';
+export const runtime = "nodejs"
 
 const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]

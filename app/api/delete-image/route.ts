@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import cloudinary from "@/lib/cloudinary"
 
-export const runtime = 'edge';
+export const runtime = "nodejs"
 
 export async function POST(req: NextRequest) {
   try {

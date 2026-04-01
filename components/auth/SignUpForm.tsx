@@ -8,6 +8,7 @@ import { Loader2, Mail, Lock, Eye, EyeOff, User, Phone, MapPin, Calendar } from 
 import { useTranslations } from "next-intl"
 import { motion, AnimatePresence, type Variants } from "framer-motion"
 import OTPVerification from "@/components/auth/otp-verification"
+import { ImageUpload, type UploadedImage } from "@/components/ui/image-upload"
 
 interface SignUpFormProps {
   onSwitchToLogin: () => void
@@ -40,6 +41,8 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
   const [companyName, setCompanyName] = useState("")
   const [companyId, setCompanyId] = useState("")
   const [nationalId, setNationalId] = useState("")
+  const [frontTryonImage, setFrontTryonImage] = useState<UploadedImage | null>(null)
+  const [sideTryonImage, setSideTryonImage] = useState<UploadedImage | null>(null)
 
   const { signup, signInWithGoogle, verifySignupOTP, resendSignupOTP } = useAuth()
   const router = useRouter()
@@ -100,6 +103,8 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
         address,
         birth_date: birthDate,
         confirmPassword,
+        tryonImage: accountType === "customer" ? frontTryonImage?.secure_url : undefined,
+        tryonSideImage: accountType === "customer" ? sideTryonImage?.secure_url : undefined,
       })
       setStep("otp")
     } catch (err) {
@@ -131,7 +136,7 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
     try {
       await signInWithGoogle()
       router.push("/")
-    } catch (err) {
+    } catch {
       setError(t("googleSignInFailed"))
     } finally {
       setIsGoogleLoading(false)
@@ -303,6 +308,32 @@ export default function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
           </div>
           <p className="text-xs text-muted-foreground">{t("ageRequirement")}</p>
         </div>
+
+        {/* Optional Try-On Photos (Customers) */}
+        {accountType === "customer" && (
+          <div className="space-y-3 rounded-lg border border-border/60 p-4">
+            <div>
+              <p className="text-sm font-medium">
+                {t("signupTryonTitle")} <span className="text-xs text-muted-foreground">({t("optional")})</span>
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">{t("signupTryonHint")}</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <ImageUpload
+                value={frontTryonImage}
+                onChange={setFrontTryonImage}
+                uploadType="user"
+                label={t("signupTryonFrontImage")}
+              />
+              <ImageUpload
+                value={sideTryonImage}
+                onChange={setSideTryonImage}
+                uploadType="user"
+                label={t("signupTryonSideImage")}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Password */}
         <div className="space-y-1.5">

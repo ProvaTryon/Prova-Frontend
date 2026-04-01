@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback } from "react"
 import { Upload, X, Loader2, AlertCircle, ImagePlus } from "lucide-react"
 import Image from "next/image"
-import { Button } from "@/components/ui/button"
 
 // ── Types ──────────────────────────────────────────
 export interface UploadedImage {
@@ -16,6 +15,8 @@ interface ImageUploadProps {
   value?: UploadedImage | null
   /** Callback when image changes */
   onChange: (image: UploadedImage | null) => void
+  /** Upload destination folder type */
+  uploadType?: "product" | "user"
   /** Label text */
   label?: string
   /** Whether the field is required */
@@ -51,11 +52,21 @@ function validateFile(file: File): string | null {
   return null
 }
 
-async function uploadFile(file: File): Promise<UploadedImage> {
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : "Upload failed"
+}
+
+async function uploadFile(
+  file: File,
+  uploadType: "product" | "user" = "product",
+): Promise<UploadedImage> {
   const form = new FormData()
   form.append("file", file)
 
-  const res = await fetch("/api/upload", { method: "POST", body: form })
+  const res = await fetch(`/api/upload?type=${uploadType}`, {
+    method: "POST",
+    body: form,
+  })
   const data = await res.json()
 
   if (!res.ok) throw new Error(data.error || "Upload failed")
@@ -73,7 +84,14 @@ async function deleteImage(public_id: string): Promise<void> {
 // ═══════════════════════════════════════════════════
 // Single Image Upload
 // ═══════════════════════════════════════════════════
-export function ImageUpload({ value, onChange, label, required, className }: ImageUploadProps) {
+export function ImageUpload({
+  value,
+  onChange,
+  uploadType = "product",
+  label,
+  required,
+  className,
+}: ImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -93,15 +111,15 @@ export function ImageUpload({ value, onChange, label, required, className }: Ima
         if (value?.public_id) {
           await deleteImage(value.public_id)
         }
-        const uploaded = await uploadFile(file)
+        const uploaded = await uploadFile(file, uploadType)
         onChange(uploaded)
-      } catch (err: any) {
-        setError(err.message || "Upload failed")
+      } catch (error: unknown) {
+        setError(getErrorMessage(error))
       } finally {
         setUploading(false)
       }
     },
-    [value, onChange],
+    [value, onChange, uploadType],
   )
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,6 +162,8 @@ export function ImageUpload({ value, onChange, label, required, className }: Ima
           <button
             type="button"
             onClick={handleRemove}
+            aria-label="Remove uploaded image"
+            title="Remove uploaded image"
             className="absolute top-2 right-2 p-1 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
           >
             <X className="w-4 h-4" />
@@ -174,6 +194,8 @@ export function ImageUpload({ value, onChange, label, required, className }: Ima
         type="file"
         accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
         onChange={handleChange}
+        aria-label="Upload image"
+        title="Upload image"
         className="hidden"
       />
 
@@ -224,10 +246,10 @@ export function MultiImageUpload({
 
       setUploading(true)
       try {
-        const results = await Promise.all(toUpload.map(uploadFile))
+        const results = await Promise.all(toUpload.map((file) => uploadFile(file)))
         onChange([...value, ...results])
-      } catch (err: any) {
-        setError(err.message || "Upload failed")
+      } catch (error: unknown) {
+        setError(getErrorMessage(error))
       } finally {
         setUploading(false)
       }
@@ -275,6 +297,8 @@ export function MultiImageUpload({
             <button
               type="button"
               onClick={() => handleRemove(i)}
+              aria-label={`Remove image ${i + 1}`}
+              title={`Remove image ${i + 1}`}
               className="absolute top-1 right-1 p-0.5 bg-black/60 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <X className="w-3 h-3" />
@@ -308,6 +332,8 @@ export function MultiImageUpload({
         accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
         multiple
         onChange={handleChange}
+        aria-label="Upload images"
+        title="Upload images"
         className="hidden"
       />
 

@@ -35,6 +35,8 @@ interface AuthContextType {
     address?: string;
     birth_date?: string;
     confirmPassword?: string;
+    tryonImage?: string;
+    tryonSideImage?: string;
   }) => Promise<{ email: string }>
   verifySignupOTP: (email: string, otp: string) => Promise<User>
   resendSignupOTP: (email: string) => Promise<void>
@@ -66,6 +68,10 @@ function mapRole(backendRole: string): User["role"] {
     default:
       return backendRole as User["role"]
   }
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -135,8 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData)
       setProfileCompletionDismissed(false)
       return userData
-    } catch (error: any) {
-      throw new Error(error.message || 'فشل تسجيل الدخول')
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, 'فشل تسجيل الدخول'))
     } finally {
       setLoading(false)
     }
@@ -158,6 +164,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       address?: string;
       birth_date?: string;
       confirmPassword?: string;
+      tryonImage?: string;
+      tryonSideImage?: string;
     }
   ): Promise<{ email: string }> => {
     try {
@@ -175,12 +183,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         companyName: additionalData?.companyName,
         companyId: additionalData?.companyId,
         nationalId: additionalData?.nationalId,
+        tryonImage: additionalData?.tryonImage,
+        tryonSideImage: additionalData?.tryonSideImage,
       })
 
       // Don't set user yet - need OTP verification first
       return { email }
-    } catch (error: any) {
-      throw new Error(error.message || 'فشل التسجيل')
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, 'فشل التسجيل'))
     } finally {
       setLoading(false)
     }
@@ -209,8 +219,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData)
       setProfileCompletionDismissed(false)
       return userData
-    } catch (error: any) {
-      throw new Error(error.message || 'فشل التحقق من الرمز')
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, 'فشل التحقق من الرمز'))
     } finally {
       setLoading(false)
     }
@@ -222,8 +232,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const resendSignupOTP = async (email: string): Promise<void> => {
     try {
       await authService.resendSignupOTP(email)
-    } catch (error: any) {
-      throw new Error(error.message || 'فشل إعادة إرسال الرمز')
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, 'فشل إعادة إرسال الرمز'))
     }
   }
 
@@ -269,8 +279,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           ...data,
         } : null)
       }
-    } catch (error: any) {
-      throw new Error(error.message || 'فشل تحديث البيانات')
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, 'فشل تحديث البيانات'))
     } finally {
       setLoading(false)
     }
@@ -283,8 +293,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true)
       await authService.changePassword({ currentPassword, newPassword })
-    } catch (error: any) {
-      throw new Error(error.message || 'فشل تغيير كلمة المرور')
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, 'فشل تغيير كلمة المرور'))
     } finally {
       setLoading(false)
     }
@@ -313,8 +323,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData)
       // Reset dismissal flag so modal shows for new login
       setProfileCompletionDismissed(false)
-    } catch (error: any) {
-      throw new Error(error.message || 'فشل تسجيل الدخول باستخدام Google')
+    } catch (error: unknown) {
+      throw new Error(getErrorMessage(error, 'فشل تسجيل الدخول باستخدام Google'))
     } finally {
       setLoading(false)
     }

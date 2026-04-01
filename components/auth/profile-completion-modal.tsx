@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -8,13 +8,12 @@ import { Loader2, Sparkles, Phone, MapPin, CalendarDays, User } from "lucide-rea
 import { useTranslations } from "next-intl"
 
 import { useAuth } from "@/lib/auth-context"
-import { updateProfile } from "@/lib/profile-service"
+import { updateProfile, type UpdateProfilePayload } from "@/lib/profile-service"
 import { useToast } from "@/hooks/use-toast"
 
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog"
@@ -29,6 +28,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { ImageUpload, type UploadedImage } from "@/components/ui/image-upload"
 
 // ── Validation schema ──────────────────────────────────
 const schema = z.object({
@@ -55,8 +55,12 @@ function getInitials(name: string) {
 
 // ── Component ──────────────────────────────────────────
 export function ProfileCompletionModal() {
+  const t = useTranslations("auth")
   const { user, needsProfileCompletion, dismissProfileCompletion, updateUserProfile } = useAuth()
   const { toast } = useToast()
+  const [frontTryonImage, setFrontTryonImage] = useState<UploadedImage | null>(null)
+  const [sideTryonImage, setSideTryonImage] = useState<UploadedImage | null>(null)
+  const showTryonSection = user?.role === "customer"
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -78,14 +82,22 @@ export function ProfileCompletionModal() {
         address: user.address ?? "",
         birth_date: "",
       })
+      setFrontTryonImage(null)
+      setSideTryonImage(null)
     }
   }, [needsProfileCompletion, user, form])
 
   const onSubmit = async (values: FormValues) => {
     try {
-      const payload: Record<string, string> = { name: values.name, phone: values.phone }
+      const payload: UpdateProfilePayload = { name: values.name, phone: values.phone }
       if (values.address) payload.address = values.address
       if (values.birth_date) payload.birth_date = values.birth_date
+      if (showTryonSection && frontTryonImage?.secure_url) {
+        payload.tryonImage = frontTryonImage.secure_url
+      }
+      if (showTryonSection && sideTryonImage?.secure_url) {
+        payload.tryonSideImage = sideTryonImage.secure_url
+      }
 
       await updateProfile(payload)
 
@@ -128,10 +140,12 @@ export function ProfileCompletionModal() {
             </Avatar>
             <div>
               <DialogTitle className="font-serif text-xl font-medium leading-tight">
-                Welcome, {user.name?.split(" ")[0] || "there"}! 👋
+                  {t("profileCompletionWelcome", {
+                    name: user.name?.split(" ")[0] || t("profileCompletionFallbackName"),
+                  })}
               </DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground mt-0.5">
-                Complete your profile to get started
+                  {t("profileCompletionDescription")}
               </DialogDescription>
             </div>
           </div>
@@ -149,10 +163,10 @@ export function ProfileCompletionModal() {
                   <FormItem>
                     <FormLabel className="flex items-center gap-1.5">
                       <User className="h-3.5 w-3.5 text-muted-foreground" />
-                      Full Name
+                      {t("fullName")}
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="e.g. Ahmed Mohamed" className="no-flip" />
+                      <Input {...field} placeholder={t("namePlaceholder")} className="no-flip" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -167,7 +181,7 @@ export function ProfileCompletionModal() {
                   <FormItem>
                     <FormLabel className="flex items-center gap-1.5">
                       <Phone className="h-3.5 w-3.5 text-muted-foreground" />
-                      Phone Number
+                      {t("phoneNumber")}
                       <span className="text-destructive ml-0.5">*</span>
                     </FormLabel>
                     <FormControl>
@@ -192,8 +206,8 @@ export function ProfileCompletionModal() {
                   <FormItem>
                     <FormLabel className="flex items-center gap-1.5">
                       <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
-                      Date of Birth
-                      <span className="text-xs text-muted-foreground ml-1">(optional)</span>
+                      {t("birthDate")}
+                      <span className="text-xs text-muted-foreground ml-1">({t("optional")})</span>
                     </FormLabel>
                     <FormControl>
                       <Input {...field} type="date" className="no-flip" />
@@ -211,16 +225,39 @@ export function ProfileCompletionModal() {
                   <FormItem>
                     <FormLabel className="flex items-center gap-1.5">
                       <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                      Delivery Address
-                      <span className="text-xs text-muted-foreground ml-1">(optional)</span>
+                      {t("address")}
+                      <span className="text-xs text-muted-foreground ml-1">({t("optional")})</span>
                     </FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="Street, City" className="no-flip" />
+                      <Input {...field} placeholder={t("addressPlaceholder")} className="no-flip" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
+              {showTryonSection && (
+                <div className="space-y-3 rounded-lg border border-border/60 p-4">
+                  <div>
+                    <p className="text-sm font-medium">{t("profileCompletionTryonTitle")}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{t("profileCompletionTryonHint")}</p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <ImageUpload
+                      value={frontTryonImage}
+                      onChange={setFrontTryonImage}
+                      uploadType="user"
+                      label={t("profileCompletionFrontImage")}
+                    />
+                    <ImageUpload
+                      value={sideTryonImage}
+                      onChange={setSideTryonImage}
+                      uploadType="user"
+                      label={t("profileCompletionSideImage")}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Actions */}
               <div className="flex items-center gap-3 pt-2">
@@ -232,12 +269,12 @@ export function ProfileCompletionModal() {
                   {form.formState.isSubmitting ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      Saving...
+                      {t("saving")}
                     </span>
                   ) : (
                     <span className="flex items-center gap-2">
                       <Sparkles className="w-4 h-4" />
-                      Save & Continue
+                      {t("saveAndContinue")}
                     </span>
                   )}
                 </Button>
@@ -247,7 +284,7 @@ export function ProfileCompletionModal() {
                   onClick={dismissProfileCompletion}
                   className="text-muted-foreground hover:text-foreground"
                 >
-                  Skip
+                  {t("skip")}
                 </Button>
               </div>
             </form>
