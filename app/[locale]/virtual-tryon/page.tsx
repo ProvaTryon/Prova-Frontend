@@ -7,7 +7,14 @@ import { useTranslations } from "next-intl"
 import { Navbar } from "@/components/layout/navbar"
 import { Footer } from "@/components/layout/footer"
 import { productService, type Product } from "@/lib/product-service"
-import { processTryOn, dataURLToFile, urlToFile, revokeObjectURL } from "@/lib/vton-service"
+import {
+  getVtonModel,
+  getOotdCategory,
+  processTryOnAndSave,
+  processVton360TryOnAndSave,
+  urlToFile,
+  revokeObjectURL,
+} from "@/lib/vton-service"
 import Image from "next/image"
 import { Upload, X, Loader2, Download, Share2, ShoppingBag, Info, AlertCircle } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
@@ -81,9 +88,34 @@ export default function VirtualTryOnPage() {
         `garment-${selectedProductData.id}.jpg`
       )
 
-      // Call the actual API
-      const resultUrl = await processTryOn(userImageFile, garmentImageFile)
-      setResult(resultUrl)
+      const model = getVtonModel(
+        selectedProductData.category,
+        selectedProductData.type,
+        selectedProductData.name,
+      )
+
+      if (model === "vton360") {
+        const saved = await processVton360TryOnAndSave(userImageFile, garmentImageFile, {
+          productId: selectedProductData.id,
+          productName: selectedProductData.name,
+          productImage: selectedProductData.image,
+          garmentCategory: selectedProductData.category,
+        })
+        setResult(saved.resultImageUrl)
+      } else {
+        const saved = await processTryOnAndSave(userImageFile, garmentImageFile, {
+          category: getOotdCategory(
+            selectedProductData.category,
+            selectedProductData.type,
+            selectedProductData.name,
+          ),
+          productId: selectedProductData.id,
+          productName: selectedProductData.name,
+          productImage: selectedProductData.image,
+          garmentCategory: selectedProductData.category,
+        })
+        setResult(saved.resultImageUrl)
+      }
     } catch (err: any) {
       console.error("Virtual try-on error:", err)
       setError(err.message || "Failed to process virtual try-on. Please try again.")

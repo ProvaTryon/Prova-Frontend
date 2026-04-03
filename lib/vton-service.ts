@@ -11,32 +11,95 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 // 🏷️ Category-based model routing
 // ==========================================
 
-const UPPER_BODY_CATEGORIES = new Set([
-    'shirt', 'shirts', 't-shirt', 't-shirts', 'tshirt', 'tshirts',
-    'blouse', 'blouses', 'jacket', 'jackets', 'coat', 'coats',
-    'sweater', 'sweaters', 'hoodie', 'hoodies', 'top', 'tops',
-    'vest', 'vests', 'cardigan', 'cardigans', 'polo', 'polos',
+const VTON360_TSHIRT_CATEGORIES = new Set([
+    't-shirt',
+    't-shirts',
+    'tshirt',
+    'tshirts',
+    'tee',
+    'tees',
 ]);
 
-const LOWER_BODY_CATEGORIES = new Set([
-    'pant', 'pants', 'trouser', 'trousers', 'jeans',
-    'shorts', 'skirt', 'skirts', 'legging', 'leggings',
+const OOTD_UPPER_BODY_CATEGORIES = new Set([
+    'shirt',
+    'shirts',
+    'blouse',
+    'blouses',
+    'jacket',
+    'jackets',
+    'coat',
+    'coats',
+    'sweater',
+    'sweaters',
+    'hoodie',
+    'hoodies',
+    'top',
+    'tops',
+    'vest',
+    'vests',
+    'cardigan',
+    'cardigans',
+    'polo',
+    'polos',
 ]);
+
+const OOTD_LOWER_BODY_CATEGORIES = new Set([
+    'pant',
+    'pants',
+    'trouser',
+    'trousers',
+    'jeans',
+    'shorts',
+    'skirt',
+    'skirts',
+    'legging',
+    'leggings',
+]);
+
+const tokenizeValues = (...values: Array<string | undefined>): string[] => {
+    return values
+        .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+        .flatMap((value) => value.toLowerCase().split(/[\/,]/))
+        .map((token) => token.trim())
+        .filter(Boolean);
+};
 
 export type VtonModel = 'vton2d' | 'vton360';
 
 /**
  * Determine which VTON model to use based on product category.
- * - Lowerbody → VTON2D
- * - Upperbody → VTON360
+ * - T-shirt variants → VTON360
  * - Unknown   → VTON2D (fallback)
  */
-export function getVtonModel(category?: string): VtonModel {
-    if (!category) return 'vton2d';
-    const cat = category.toLowerCase().trim();
-    if (UPPER_BODY_CATEGORIES.has(cat)) return 'vton360';
-    if (LOWER_BODY_CATEGORIES.has(cat)) return 'vton2d';
+export function getVtonModel(category?: string, type?: string, name?: string): VtonModel {
+    const tokens = tokenizeValues(category, type, name);
+    if (tokens.length === 0) return 'vton2d';
+
+    if (tokens.some((token) => VTON360_TSHIRT_CATEGORIES.has(token))) {
+        return 'vton360';
+    }
+
     return 'vton2d';
+}
+
+/**
+ * OOTDiffusion category mapping.
+ * - 0: upperbody
+ * - 1: lowerbody
+ * - 2: dress/fullbody fallback
+ */
+export function getOotdCategory(category?: string, type?: string, name?: string): number {
+    const tokens = tokenizeValues(category, type, name);
+
+    if (tokens.some((token) => OOTD_LOWER_BODY_CATEGORIES.has(token))) {
+        return 1;
+    }
+
+    if (tokens.some((token) => OOTD_UPPER_BODY_CATEGORIES.has(token))) {
+        return 0;
+    }
+
+    return 2;
 }
 
 /** Validate that a File is an accepted image type. */
@@ -93,6 +156,66 @@ async function postForImage(
     return URL.createObjectURL(blob);
 }
 
+export interface TryOnSavedResult {
+    id: string;
+    model: VtonModel;
+    resultImageUrl: string;
+    resultImagePublicId: string;
+    productId?: string;
+    productName?: string;
+    productImage?: string;
+    garmentCategory?: string;
+    createdAt: string;
+}
+
+export interface TryOnSaveMetadata {
+    productId?: string;
+    productName?: string;
+    productImage?: string;
+    garmentCategory?: string;
+    signal?: AbortSignal;
+}
+
+function appendTryOnMetadata(formData: FormData, metadata?: TryOnSaveMetadata): void {
+    if (!metadata) return;
+
+    if (metadata.productId) formData.append('product_id', metadata.productId);
+    if (metadata.productName) formData.append('product_name', metadata.productName);
+    if (metadata.productImage) formData.append('product_image', metadata.productImage);
+    if (metadata.garmentCategory) formData.append('garment_category', metadata.garmentCategory);
+}
+
+async function postForSavedTryOn(
+    url: string,
+    formData: FormData,
+    signal?: AbortSignal,
+): Promise<TryOnSavedResult> {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+        throw new Error('Authentication required. Please log in.');
+    }
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+        signal,
+    });
+
+    if (!response.ok) {
+        throw new Error(await parseErrorResponse(response));
+    }
+
+    const body = await response.json();
+    const data = (body?.data ?? body) as Partial<TryOnSavedResult>;
+
+    if (!data?.id || !data.resultImageUrl) {
+        throw new Error('Invalid try-on response from server.');
+    }
+
+    return data as TryOnSavedResult;
+}
+
 // ==========================================
 // 👗 VTON2D — lowerbody try-on
 // ==========================================
@@ -121,6 +244,25 @@ export const processTryOn = async (
     return postForImage(`${API_URL}/api/vton/process`, formData, options?.signal);
 };
 
+export const processTryOnAndSave = async (
+    personImageFile: File,
+    garmentImageFile: File,
+    options?: TryOnOptions & TryOnSaveMetadata,
+): Promise<TryOnSavedResult> => {
+    const formData = new FormData();
+    formData.append('person_image', personImageFile);
+    formData.append('garment_image', garmentImageFile);
+
+    if (options?.modelType) formData.append('modelType', options.modelType);
+    if (options?.category !== undefined) formData.append('category', String(options.category));
+    if (options?.scale !== undefined) formData.append('scale', String(options.scale));
+    if (options?.sample !== undefined) formData.append('sample', String(options.sample));
+
+    appendTryOnMetadata(formData, options);
+
+    return postForSavedTryOn(`${API_URL}/api/vton/process-and-save`, formData, options?.signal);
+};
+
 // ==========================================
 // 🔄 VTON360 — upperbody try-on
 // ==========================================
@@ -135,6 +277,24 @@ export const processVton360TryOn = async (
     formData.append('garment_image', garmentImageFile);
 
     return postForImage(`${API_URL}/api/vton360/simple-process`, formData, signal);
+};
+
+export const processVton360TryOnAndSave = async (
+    personImageFile: File,
+    garmentImageFile: File,
+    options?: TryOnSaveMetadata,
+): Promise<TryOnSavedResult> => {
+    const formData = new FormData();
+    formData.append('person_image', personImageFile);
+    formData.append('garment_image', garmentImageFile);
+
+    appendTryOnMetadata(formData, options);
+
+    return postForSavedTryOn(
+        `${API_URL}/api/vton360/simple-process-and-save`,
+        formData,
+        options?.signal,
+    );
 };
 
 // ==========================================

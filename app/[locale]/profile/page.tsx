@@ -31,6 +31,11 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useCurrentUser } from "@/hooks/use-current-user"
 import { getMyOrders } from "@/lib/order-service"
 import { refreshMeasurementsFromProfile } from "@/lib/measurement-service"
+import {
+  deleteTryOnResult,
+  fetchRecentTryOns,
+  type TryOnHistoryItem,
+} from "@/lib/tryon-history-service"
 import Link from "next/link"
 
 import {
@@ -404,6 +409,10 @@ export default function ProfilePage() {
   const [orders, setOrders] = useState<OrderListItem[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [ordersError, setOrdersError] = useState("")
+  const [recentTryOns, setRecentTryOns] = useState<TryOnHistoryItem[]>([])
+  const [tryOnsLoading, setTryOnsLoading] = useState(false)
+  const [tryOnsError, setTryOnsError] = useState("")
+  const [deletingTryOnId, setDeletingTryOnId] = useState<string | null>(null)
   const [settingsFrontTryonImage, setSettingsFrontTryonImage] = useState<UploadedImage | null>(null)
   const [settingsSideTryonImage, setSettingsSideTryonImage] = useState<UploadedImage | null>(null)
   const [savingTryonSettings, setSavingTryonSettings] = useState(false)
@@ -501,6 +510,50 @@ export default function ProfilePage() {
       loadOrders()
     }
   }, [activeTab, isAuthenticated, loadOrders])
+
+  const loadRecentTryOns = useCallback(async () => {
+    try {
+      setTryOnsLoading(true)
+      setTryOnsError("")
+      const data = await fetchRecentTryOns(18, 1)
+      setRecentTryOns(Array.isArray(data.items) ? data.items : [])
+    } catch (err) {
+      setTryOnsError((err as Error).message || "Failed to load recent try-ons")
+      setRecentTryOns([])
+    } finally {
+      setTryOnsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === "tryons" && isAuthenticated) {
+      loadRecentTryOns()
+    }
+  }, [activeTab, isAuthenticated, loadRecentTryOns])
+
+  const handleDeleteTryOn = useCallback(
+    async (tryOnId: string) => {
+      try {
+        setDeletingTryOnId(tryOnId)
+        await deleteTryOnResult(tryOnId)
+        setRecentTryOns((prev) => prev.filter((item) => item.id !== tryOnId))
+
+        toast({
+          title: t("success"),
+          description: t("tryonDeleteSuccess") || "Try-on deleted successfully",
+        })
+      } catch (err) {
+        toast({
+          variant: "destructive",
+          title: t("error"),
+          description: (err as Error).message || t("tryonDeleteFailed") || "Failed to delete try-on",
+        })
+      } finally {
+        setDeletingTryOnId(null)
+      }
+    },
+    [t, toast],
+  )
 
   // ── Submit profile ──
   const onSubmit = async (values: ProfileFormValues) => {
@@ -634,6 +687,7 @@ export default function ProfilePage() {
   const tabs = [
     { id: "profile", label: t("profile"), icon: User },
     { id: "orders", label: t("orders"), icon: Package },
+    { id: "tryons", label: t("recentTryons"), icon: Camera },
     { id: "wishlist", label: t("myWishlist"), icon: Heart },
     { id: "settings", label: t("settings"), icon: Settings },
   ]
@@ -1158,6 +1212,133 @@ export default function ProfilePage() {
                               </div>
                             </div>
                           ))}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  {/* ═══════════ RECENT TRY-ONS TAB ═══════════ */}
+                  {activeTab === "tryons" && (
+                    <motion.div
+                      key="tryons"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8 }}
+                      transition={{ duration: 0.25 }}
+                      className="p-6 sm:p-8 space-y-6"
+                    >
+                      <h2 className="font-serif text-xl font-medium">
+                        {t("recentTryons")}
+                      </h2>
+
+                      {tryOnsLoading && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div key={i} className="border border-border rounded-lg p-4">
+                              <Skeleton className="aspect-[3/4] w-full rounded-md mb-3" />
+                              <Skeleton className="h-4 w-2/3 mb-2" />
+                              <Skeleton className="h-3 w-1/2" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {!tryOnsLoading && tryOnsError && (
+                        <div className="text-center py-16">
+                          <XCircle className="w-12 h-12 mx-auto mb-3 text-destructive/40" />
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {tryOnsError}
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={loadRecentTryOns}
+                          >
+                            {t("tryAgain") || "Try Again"}
+                          </Button>
+                        </div>
+                      )}
+
+                      {!tryOnsLoading && !tryOnsError && recentTryOns.length === 0 && (
+                        <div className="text-center py-16">
+                          <Camera className="w-14 h-14 mx-auto mb-4 text-muted-foreground/40" />
+                          <p className="text-sm text-muted-foreground mb-4">
+                            {t("noRecentTryons") || "No try-ons yet"}
+                          </p>
+                          <Link
+                            href="/shop"
+                            className="text-sm text-primary hover:underline"
+                          >
+                            {t("startShopping") || "Start Shopping"}
+                          </Link>
+                        </div>
+                      )}
+
+                      {!tryOnsLoading && !tryOnsError && recentTryOns.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {recentTryOns.map((item) => {
+                            const createdAt = new Date(item.createdAt).toLocaleDateString(undefined, {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                            })
+
+                            const modelLabel = item.model === "vton360" ? "VTON360" : "OOTDiffusion"
+
+                            return (
+                              <div
+                                key={item.id}
+                                className="border border-border rounded-lg p-4 space-y-3"
+                              >
+                                <div className="relative aspect-[3/4] rounded-md overflow-hidden bg-muted">
+                                  <img
+                                    src={item.resultImageUrl}
+                                    alt={item.productName || t("tryonProductFallback") || "Try-on result"}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <span className="absolute top-2 right-2 px-2 py-1 rounded-full text-[10px] font-semibold bg-primary text-primary-foreground">
+                                    {modelLabel}
+                                  </span>
+                                </div>
+
+                                <div className="space-y-1">
+                                  <p className="text-sm font-medium line-clamp-1">
+                                    {item.productName || t("tryonProductFallback") || "Product"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground line-clamp-1">
+                                    {item.garmentCategory || t("category") || "Category"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">{createdAt}</p>
+                                </div>
+
+                                <div className="flex items-center gap-2">
+                                  {item.productId ? (
+                                    <Link
+                                      href={`/product/${item.productId}`}
+                                      className="flex-1 px-3 py-2 bg-primary text-primary-foreground rounded-md text-center text-xs font-medium hover:bg-primary/90 transition-colors"
+                                    >
+                                      {t("viewProduct") || "View Product"}
+                                    </Link>
+                                  ) : (
+                                    <div className="flex-1" />
+                                  )}
+
+                                  <button
+                                    onClick={() => handleDeleteTryOn(item.id)}
+                                    disabled={deletingTryOnId === item.id}
+                                    className="px-3 py-2 border border-border rounded-md hover:bg-muted transition-colors disabled:opacity-60"
+                                    title={t("delete") || "Delete"}
+                                  >
+                                    {deletingTryOnId === item.id ? (
+                                      <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       )}
                     </motion.div>

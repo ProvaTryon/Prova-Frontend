@@ -335,9 +335,11 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
               <TryOnDialog
                 open={tryOnOpen}
                 onOpenChange={setTryOnOpen}
+                productId={mappedProduct.id}
                 productImage={mappedProduct.image}
                 productName={mappedProduct.name}
                 productCategory={mappedProduct.category}
+                productType={mappedProduct.type}
               />
               <button
                 onClick={handleWishlistToggle}

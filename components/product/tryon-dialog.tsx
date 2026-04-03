@@ -7,8 +7,16 @@ import { useTranslations } from "next-intl"
 import { useAuth } from "@/lib/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { fetchProfile, updateProfile } from "@/lib/profile-service"
-import { refreshMeasurementsFromProfile } from "@/lib/measurement-service"
-import { processTryOn, urlToFile, revokeObjectURL, processVton360TryOn, getVtonModel, validateImageFile } from "@/lib/vton-service"
+import { fetchLatestMeasurements, refreshMeasurementsFromProfile } from "@/lib/measurement-service"
+import {
+  processTryOnAndSave,
+  urlToFile,
+  revokeObjectURL,
+  processVton360TryOnAndSave,
+  getVtonModel,
+  getOotdCategory,
+  validateImageFile,
+} from "@/lib/vton-service"
 import {
   Dialog,
   DialogContent,
@@ -20,9 +28,11 @@ import { Button } from "@/components/ui/button"
 interface TryOnDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  productId: string
   productImage: string
   productName: string
   productCategory?: string
+  productType?: string
 }
 
 type Step = "loading" | "upload" | "saved" | "processing" | "result" | "auth-error"
@@ -51,7 +61,15 @@ function getErrorMessage(error: unknown): string | undefined {
   return undefined
 }
 
-export function TryOnDialog({ open, onOpenChange, productImage, productName, productCategory }: TryOnDialogProps) {
+export function TryOnDialog({
+  open,
+  onOpenChange,
+  productId,
+  productImage,
+  productName,
+  productCategory,
+  productType,
+}: TryOnDialogProps) {
   const t = useTranslations("productDetail")
   const { logout } = useAuth()
   const { toast } = useToast()
@@ -64,6 +82,7 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
   const [uploadedSideFile, setUploadedSideFile] = useState<File | null>(null)
   const [sideUploadPreview, setSideUploadPreview] = useState<string | null>(null)
   const [saveToProfile, setSaveToProfile] = useState(true)
+  const [refreshMeasurementsNow, setRefreshMeasurementsNow] = useState(false)
   const [resultUrl, setResultUrl] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -92,6 +111,7 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
     setResultUrl(null)
     setError(null)
     setSaveToProfile(true)
+    setRefreshMeasurementsNow(false)
 
     const loadProfile = async () => {
       try {
@@ -181,7 +201,7 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
     setStep("processing")
     setError(null)
 
-    const model = getVtonModel(productCategory)
+    const model = getVtonModel(productCategory, productType, productName)
     // VTON360 pipeline is much slower (Colab inference) — allow 10 min
     const timeoutMs = model === 'vton360' ? 600_000 : 120_000
 
@@ -193,9 +213,24 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
       const signal = abortRef.current.signal
       let result: string
       if (model === 'vton360') {
-        result = await processVton360TryOn(personFile, garmentFile, signal)
+        const saved = await processVton360TryOnAndSave(personFile, garmentFile, {
+          signal,
+          productId,
+          productName,
+          productImage,
+          garmentCategory: productCategory,
+        })
+        result = saved.resultImageUrl
       } else {
-        result = await processTryOn(personFile, garmentFile, { category: 1, signal })
+        const saved = await processTryOnAndSave(personFile, garmentFile, {
+          category: getOotdCategory(productCategory, productType, productName),
+          signal,
+          productId,
+          productName,
+          productImage,
+          garmentCategory: productCategory,
+        })
+        result = saved.resultImageUrl
       }
       setResultUrl(result)
       setStep("result")
@@ -210,7 +245,7 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
       clearTimeout(timer)
       abortRef.current = null
     }
-  }, [productImage, productCategory, savedImageUrl, t])
+  }, [productCategory, productId, productImage, productName, productType, savedImageUrl, t])
 
   const handleUseSavedImage = useCallback(async () => {
     if (!savedImageUrl) return
@@ -246,14 +281,19 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
           setSavedImageUrl(frontCloudUrl)
           setSavedSideImageUrl(sideCloudUrl)
 
-          // Trigger measurements refresh without blocking virtual try-on flow.
-          refreshMeasurementsFromProfile({ engine: "shapy" }).catch(() => {
-            toast({
-              title: t("tryOn.measurementRefreshFailed") || "Size recommendation update failed",
-              description: t("tryOn.measurementRefreshFailedDesc") || "Please retry from your profile later.",
-              variant: "destructive",
+          // Do not re-run measurements when one already exists unless the user asks for it.
+          const latestMeasurement = await fetchLatestMeasurements().catch(() => null)
+          const shouldRefreshMeasurements = refreshMeasurementsNow || !latestMeasurement
+
+          if (shouldRefreshMeasurements) {
+            refreshMeasurementsFromProfile({ engine: "shapy" }).catch(() => {
+              toast({
+                title: t("tryOn.measurementRefreshFailed") || "Size recommendation update failed",
+                description: t("tryOn.measurementRefreshFailedDesc") || "Please retry from your profile later.",
+                variant: "destructive",
+              })
             })
-          })
+          }
         } catch {
           // Profile save failed (e.g. expired token) — continue with try-on anyway
         }
@@ -263,7 +303,7 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
     } catch (err: unknown) {
       setError(sanitizeError(getErrorMessage(err)) || t("tryOn.uploadFailed"))
     }
-  }, [uploadedFile, uploadedSideFile, saveToProfile, runTryOn, t, toast])
+  }, [refreshMeasurementsNow, runTryOn, saveToProfile, t, toast, uploadedFile, uploadedSideFile])
 
   const handleDownload = useCallback(() => {
     if (!resultUrl) return
@@ -431,6 +471,16 @@ export function TryOnDialog({ open, onOpenChange, productImage, productName, pro
                     {t("tryOn.removeSidePhoto") || "Remove side photo"}
                   </button>
                 )}
+
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={refreshMeasurementsNow}
+                    onChange={(e) => setRefreshMeasurementsNow(e.target.checked)}
+                    className="rounded border-border"
+                  />
+                  {t("tryOn.recalculateMeasurementsNow") || "Recalculate body measurements now"}
+                </label>
               </div>
             )}
 
